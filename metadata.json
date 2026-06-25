@@ -1,0 +1,8 @@
+{
+  "name": "WorkTrack",
+  "description": "A futuristic SaaS-style monthly performance tracking dashboard with neon analytics visualization and comparison reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
