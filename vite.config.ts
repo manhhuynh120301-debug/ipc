@@ -15,8 +15,8 @@ export default defineConfig(({mode}) => {
     registerType:'autoUpdate',
     includeAssets:['favicon.ico'],
     manifest:{
-      name:'WorkTrack Dashboard',
-      short_name:'WorkTrack',
+      name:'IPC Dashboard',
+      short_name:'BC IPC',
       theme_color:'#2563eb',
       background_color:'#ffffff',
       display:'standalone',
