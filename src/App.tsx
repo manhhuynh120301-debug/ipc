@@ -1018,4 +1018,10 @@ export default function App() {
     </div>
   );
 }
+useEffect(() => {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    console.log('App can be installed');
+  });
+}, []);
 
