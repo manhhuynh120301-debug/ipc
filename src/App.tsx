@@ -581,45 +581,45 @@ export default function App() {
         transition={{ duration: 0.2, delay: index * 0.05 }}
         key={item.msnv}
         className={cn(
-          "flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300",
+          "flex items-center justify-between px-2.5 py-3 sm:p-3.5 rounded-2xl transition-all duration-300",
           isTop3 
             ? "bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-500/10 hover:border-indigo-500/20" 
             : "bg-white/40 dark:bg-slate-900/10 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-800/50"
         )}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
           <span className={cn(
             "w-4 sm:w-5 text-center text-sm font-black flex items-center justify-center flex-shrink-0",
             isTop3 ? "text-indigo-500 text-base" : "text-slate-400"
           )}>
             {medal ? medal : `${index + 1}`}
           </span>
-          <div className="flex items-center min-w-0 flex-1 py-0.5">
-            <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 truncate">
+          <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
+            <span className="text-[11px] sm:text-sm font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
               {item.name}
             </span>
           </div>
         </div>
-        <div className="text-right flex-shrink-0 ml-2">
+        <div className="text-right flex-shrink-0 ml-1.5 sm:ml-2">
           <div className={cn(
             "rounded-xl sm:rounded-full font-black transition-all",
-            "p-1.5 sm:py-1 sm:px-3 text-center flex items-center justify-center border",
+            "px-1.5 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border",
             isTop3 
               ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" 
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50"
           )}>
             {valueKey === 'samples' ? (
-              <span className="text-[10px] sm:text-xs whitespace-nowrap flex items-center gap-0.5">
+              <span className="text-[9px] sm:text-xs whitespace-nowrap flex items-center gap-0.5">
                 <span>{item.samples}</span>
-                <span className="text-[8px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">mẫu</span>
+                <span className="text-[7.5px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">mẫu</span>
                 <span className="text-slate-300 dark:text-slate-700 mx-0.5">/</span>
                 <span>{item.workDays}</span>
-                <span className="text-[8px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">ngày</span>
+                <span className="text-[7.5px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">ngày</span>
               </span>
             ) : (
-              <span className="text-[10px] sm:text-xs whitespace-nowrap flex items-center gap-0.5">
+              <span className="text-[9px] sm:text-xs whitespace-nowrap flex items-center gap-0.5">
                 <span>{item[valueKey]}</span>
-                <span className="text-[8px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">{unit}</span>
+                <span className="text-[7.5px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">{unit}</span>
               </span>
             )}
           </div>
@@ -943,7 +943,7 @@ export default function App() {
           </div>
 
           {/* THỐNG KÊ IPC */}
-          <div className="max-w-4xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
+          <div className="max-w-4xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-3 py-5 sm:p-8 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl">
@@ -967,7 +967,7 @@ export default function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Panel 1: Xếp hạng số mẫu */}
-              <div className="bg-slate-50/50 dark:bg-slate-950/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
+              <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
                 <h4 
                   className="text-[1.1rem] font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2"
                   style={{ textShadow: "0 0 10px rgba(99,102,241,0.35), 0 0 20px rgba(99,102,241,0.20)" }}
@@ -996,7 +996,7 @@ export default function App() {
               </div>
 
               {/* Panel 2: Xếp hạng ngày làm */}
-              <div className="bg-slate-50/50 dark:bg-slate-950/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
+              <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
                 <h4 
                   className="text-[1.1rem] font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2"
                   style={{ textShadow: "0 0 10px rgba(16,185,129,0.35), 0 0 20px rgba(16,185,129,0.20)" }}
