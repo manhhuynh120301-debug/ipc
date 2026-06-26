@@ -1018,12 +1018,4 @@ export default function App() {
     </div>
   );
 }
-useEffect(() => {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    console.log('App can be installed');
-  });
-}, []);
-const [installPrompt, setInstallPrompt] = useState<any>(null);
-const [showInstallPopup, setShowInstallPopup] = useState(false);
 
