@@ -19,8 +19,6 @@ import {
   TrendingUp, 
   TrendingDown, 
   Download, 
-  Moon, 
-  Sun, 
   Briefcase,
   Search,
   Clock,
@@ -275,7 +273,6 @@ export default function App() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Helper date conversions
@@ -535,17 +532,13 @@ export default function App() {
   }, [notification]);
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   const handleExportPNG = async () => {
     if (dashboardRef.current) {
       const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: isDarkMode ? '#18181b' : '#ffffff',
+        backgroundColor: '#ffffff',
         scale: 2,
       });
       const link = document.createElement('a');
@@ -558,7 +551,7 @@ export default function App() {
   const handleExportPDF = async () => {
     if (dashboardRef.current) {
       const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: isDarkMode ? '#020617' : '#ffffff',
+        backgroundColor: '#ffffff',
         scale: 2,
       });
       const imgData = canvas.toDataURL('image/png');
@@ -663,16 +656,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="w-full max-w-full overflow-hidden flex flex-col">
-        <header className="px-6 py-4 flex items-center justify-end bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 mb-3">
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95"
-          >
-            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </header>
-
-        <div className="px-6 pt-1 pb-6 space-y-6 flex-1 min-h-0 overflow-y-auto">
+        <div className="px-6 pt-4 pb-6 space-y-6 flex-1 min-h-0 overflow-y-auto">
           <motion.section 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -688,11 +672,11 @@ export default function App() {
                   <p className="text-slate-400 font-medium text-[10px] uppercase tracking-wider">Cấu hình thông tin</p>
                 </div>
               </div>
-              <div>
+              <div className="flex items-center gap-2">
                 {googleSheetsConnected && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Google Sheets Connected
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-[8px] font-semibold uppercase tracking-normal">
+                    <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                    Connected
                   </div>
                 )}
               </div>
