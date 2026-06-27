@@ -706,7 +706,7 @@ export default function App() {
             {medal ? medal : `${index + 1}`}
           </span>
           <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
-            <span className="text-[14px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
+            <span className="text-[13px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
               {item.name}
             </span>
           </div>
@@ -1148,7 +1148,7 @@ export default function App() {
         </div>
 
         <footer className="px-8 py-6 text-center text-slate-400 dark:text-slate-600 text-xs">
-          <p className="font-medium tracking-wide">© 2026 IPC DASHBOARD · HỆ THỐNG NỘI BỘ.</p>
+          <p className="font-medium tracking-wide">© 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.</p>
         </footer>
       </main>
 
