@@ -162,6 +162,9 @@ const StatCard = ({
   const isNeutral = diff === 0;
   const isUp = diff > 0;
 
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isIosExport = isExport && isIOS;
+
   return (
     <motion.div 
       whileHover={isExport ? undefined : { y: -6, scale: 1.01, boxShadow: "0 30px 60px -12px rgba(0, 0, 0, 0.1)" }}
@@ -183,8 +186,13 @@ const StatCard = ({
           colorClass,
           "relative shrink-0"
         )}>
-          <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
-          <Icon className="w-6 h-6 text-white relative z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
+          {!isIosExport && (
+            <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
+          )}
+          <Icon className={cn(
+            "w-6 h-6 text-white relative z-10",
+            isIosExport ? "" : "drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]"
+          )} />
         </div>
         <p className={cn(
           isExport 
@@ -924,7 +932,7 @@ export default function App() {
                   value={employeeId}
                   onChange={e => setEmployeeId(e.target.value)}
                   placeholder="Nhập MSNV"
-                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm"
+                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm"
                 />
                 {isSearching && <p className="text-[10px] text-indigo-500 font-bold ml-1">Đang tra cứu...</p>}
                 {!isSearching && employeeError && <p className="text-[10px] text-rose-500 font-bold ml-1">{employeeError}</p>}
@@ -940,7 +948,7 @@ export default function App() {
                   type="month" 
                   value={reportingMonth}
                   onChange={e => setReportingMonth(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm cursor-pointer"
+                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer"
                 />
               </div>
               <div className="space-y-1 relative">
@@ -952,7 +960,7 @@ export default function App() {
                     type="month" 
                     value={comparisonMonth}
                     onChange={e => setComparisonMonth(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm cursor-pointer"
+                    className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer"
                   />
                 </div>
               </div>
@@ -982,7 +990,7 @@ export default function App() {
                       type="number" 
                       value={currentStats.samples ?? ''}
                       onChange={e => setCurrentStats({...currentStats, samples: e.target.value === '' ? null : parseInt(e.target.value) || 0})}
-                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[16px] md:text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -991,7 +999,7 @@ export default function App() {
                       type="number" 
                       value={currentStats.workDays ?? ''}
                       onChange={e => setCurrentStats({...currentStats, workDays: e.target.value === '' ? null : parseInt(e.target.value) || 0})}
-                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[16px] md:text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -1003,7 +1011,7 @@ export default function App() {
                       type="number" 
                       value={currentStats.lateDays ?? ''}
                       onChange={e => setCurrentStats({...currentStats, lateDays: e.target.value === '' ? null : parseInt(e.target.value) || 0})}
-                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[16px] md:text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -1012,7 +1020,7 @@ export default function App() {
                       type="number" 
                       value={currentStats.forgotDays ?? ''}
                       onChange={e => setCurrentStats({...currentStats, forgotDays: e.target.value === '' ? null : parseInt(e.target.value) || 0})}
-                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[16px] md:text-xs font-medium focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -1043,7 +1051,7 @@ export default function App() {
                       readOnly
                       disabled
                       value={prevStats?.samples ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -1053,7 +1061,7 @@ export default function App() {
                       readOnly
                       disabled
                       value={prevStats?.workDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                 </div>
@@ -1066,7 +1074,7 @@ export default function App() {
                       readOnly
                       disabled
                       value={prevStats?.lateDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -1076,7 +1084,7 @@ export default function App() {
                       readOnly
                       disabled
                       value={prevStats?.forgotDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                 </div>
@@ -1196,7 +1204,7 @@ export default function App() {
                   type="month" 
                   value={rankingMonth}
                   onChange={e => setRankingMonth(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-[16px] md:text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
             </div>
