@@ -29,10 +29,11 @@ import {
   ArrowDown,
   CheckCircle2,
   Activity,
-  User
+  User,
+  Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import html2canvas from 'html2canvas';
+import { domToCanvas } from 'modern-screenshot';
 import { jsPDF } from 'jspdf';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -273,6 +274,7 @@ export default function App() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Helper date conversions
@@ -537,31 +539,107 @@ export default function App() {
 
   const handleExportPNG = async () => {
     if (dashboardRef.current) {
-      const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-      });
-      const link = document.createElement('a');
-      link.download = `dashboard-${currentStats.month}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      try {
+        const canvas = await domToCanvas(dashboardRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        });
+        const link = document.createElement('a');
+        link.download = `dashboard-${currentStats.month}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        console.error('Error exporting PNG:', err);
+      }
     }
   };
 
   const handleExportPDF = async () => {
     if (dashboardRef.current) {
-      const canvas = await html2canvas(dashboardRef.current, {
+      try {
+        const canvas = await domToCanvas(dashboardRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, pdf.internal.pageSize.getHeight()));
+        pdf.save(`dashboard-${currentStats.month}.pdf`);
+      } catch (err) {
+        console.error('Error exporting PDF:', err);
+      }
+    }
+  };
+
+  const handleExportReport = async () => {
+    if (!dashboardRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await domToCanvas(dashboardRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
       });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, pdf.internal.pageSize.getHeight()));
-      pdf.save(`dashboard-${currentStats.month}.pdf`);
+      
+      const formattedMonth = currentStats.month && currentStats.month !== 'Tháng hiện tại'
+        ? currentStats.month.replace(/\//g, '-')
+        : (reportingMonth ? reportingMonth.split('-').reverse().join('-') : 'month');
+      const filename = `bao-cao-ipc-${employeeId || 'unknown'}-${formattedMonth}.png`;
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsExporting(false);
+          return;
+        }
+
+        const file = new File(
+          [blob],
+          filename,
+          { type: 'image/png' }
+        );
+
+        // Try Web Share API first
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: 'Báo cáo IPC',
+              text: 'Báo cáo tháng IPC',
+              files: [file]
+            });
+            setNotification({ type: 'success', message: 'Chia sẻ báo cáo thành công!' });
+          } catch (shareErr) {
+            const errName = (shareErr as any)?.name;
+            if (errName === 'AbortError' || errName === 'NotAllowedError') {
+              console.log('Share was cancelled by user:', shareErr);
+            } else {
+              console.error('Web Share failed, falling back to download:', shareErr);
+              triggerDownload(canvas, filename);
+            }
+          }
+        } else {
+          triggerDownload(canvas, filename);
+        }
+        setIsExporting(false);
+      }, 'image/png');
+
+    } catch (err) {
+      console.error('Error exporting report:', err);
+      setNotification({ type: 'error', message: 'Có lỗi xảy ra khi xuất báo cáo.' });
+      setIsExporting(false);
     }
+  };
+
+  const triggerDownload = (canvas: HTMLCanvasElement, filename: string) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    setNotification({ 
+      type: 'success', 
+      message: 'Thiết bị không hỗ trợ chia sẻ trực tiếp. Ảnh đã được tải xuống.' 
+    });
   };
 
   const renderRankItem = (item: RankingItem, index: number, valueKey: 'samples' | 'workDays', unit: string) => {
@@ -924,6 +1002,24 @@ export default function App() {
               rotation="rotate-[8deg]"
             />
           </section>
+          </div>
+
+          {/* Export Report Button */}
+          <div className="max-w-4xl mx-auto flex justify-center py-4">
+            <motion.button
+              whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(99, 102, 241, 0.4)" }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleExportReport}
+              disabled={isExporting}
+              className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isExporting ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Share2 className="w-4 h-4" />
+              )}
+              {isExporting ? 'ĐANG XUẤT...' : 'XUẤT BÁO CÁO'}
+            </motion.button>
           </div>
 
           {/* THỐNG KÊ IPC */}
