@@ -137,7 +137,8 @@ const StatCard = ({
   unit = '',
   usePercentage = false,
   isInverse = false,
-  rotation = "rotate-0"
+  rotation = "rotate-0",
+  isExport = false
 }: { 
   title: string; 
   value: number | null; 
@@ -149,6 +150,7 @@ const StatCard = ({
   usePercentage?: boolean;
   isInverse?: boolean;
   rotation?: string;
+  isExport?: boolean;
 }) => {
   const hasComparison = prevValue !== undefined && prevValue !== null;
   const safeValue = value || 0;
@@ -162,9 +164,10 @@ const StatCard = ({
 
   return (
     <motion.div 
-      whileHover={{ y: -6, scale: 1.01, boxShadow: "0 30px 60px -12px rgba(0, 0, 0, 0.1)" }}
-      initial={{ opacity: 0, y: 20 }}
+      whileHover={isExport ? undefined : { y: -6, scale: 1.01, boxShadow: "0 30px 60px -12px rgba(0, 0, 0, 0.1)" }}
+      initial={isExport ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: isExport ? 0 : 0.5 }}
       className="group bg-white dark:bg-slate-900 rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] dark:shadow-none border border-white dark:border-slate-800/60 flex flex-col transition-all duration-500 relative overflow-hidden h-full ring-1 ring-slate-200/50 dark:ring-white/5"
     >
       {/* Row 1: Icon + Title */}
@@ -185,17 +188,17 @@ const StatCard = ({
       {/* Row 2 (FLEX): Value + Comparison */}
       <div className="flex items-end justify-between gap-2 mt-auto">
         <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter flex items-end gap-1 leading-none">
-          <AnimatedNumber value={safeValue} />
+          {isExport ? safeValue.toLocaleString() : <AnimatedNumber value={safeValue} />}
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-1">{unit}</span>
         </h3>
 
         {hasComparison && (
           <div className="flex flex-col items-end text-right">
             <motion.div 
-              initial={{ opacity: 0, y: 6 }}
+              initial={isExport ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.03 }}
+              transition={{ duration: isExport ? 0 : 0.5, ease: "easeOut" }}
+              whileHover={isExport ? undefined : { scale: 1.03 }}
               className={cn(
                 "flex items-center gap-0.5 text-xs font-bold leading-none px-2 py-1 rounded-lg transition-colors cursor-default",
                 isUp 
@@ -216,12 +219,12 @@ const StatCard = ({
                 <div className="flex items-center">
                   {usePercentage ? (
                     <>
-                      <AnimatedCounter value={Math.abs(percentChange)} />
+                      {isExport ? Math.abs(percentChange).toFixed(1) : <AnimatedCounter value={Math.abs(percentChange)} />}
                       <span>%</span>
                     </>
                   ) : (
                     <>
-                      <AnimatedCounter value={Math.abs(diff)} decimals={0} />
+                      {isExport ? Math.abs(diff).toFixed(0) : <AnimatedCounter value={Math.abs(diff)} decimals={0} />}
                       <span className="ml-1 text-[10px] uppercase opacity-80">{unit || 'ngày'}</span>
                     </>
                   )}
@@ -276,6 +279,8 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const mobileExportRef = useRef<HTMLDivElement>(null);
+  const desktopExportRef = useRef<HTMLDivElement>(null);
 
   // Helper date conversions
   const toMonthYear = (yyyyMm: string): string => {
@@ -538,11 +543,13 @@ export default function App() {
   }, []);
 
   const handleExportPNG = async () => {
-    if (dashboardRef.current) {
+    const isMobile = window.innerWidth < 768;
+    const targetEl = isMobile ? mobileExportRef.current : desktopExportRef.current;
+    if (targetEl) {
       try {
-        const canvas = await domToCanvas(dashboardRef.current, {
+        const canvas = await domToCanvas(targetEl, {
           backgroundColor: '#ffffff',
-          scale: 2,
+          scale: 3,
         });
         const link = document.createElement('a');
         link.download = `dashboard-${currentStats.month}.png`;
@@ -555,11 +562,13 @@ export default function App() {
   };
 
   const handleExportPDF = async () => {
-    if (dashboardRef.current) {
+    const isMobile = window.innerWidth < 768;
+    const targetEl = isMobile ? mobileExportRef.current : desktopExportRef.current;
+    if (targetEl) {
       try {
-        const canvas = await domToCanvas(dashboardRef.current, {
+        const canvas = await domToCanvas(targetEl, {
           backgroundColor: '#ffffff',
-          scale: 2,
+          scale: 3,
         });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -575,12 +584,14 @@ export default function App() {
   };
 
   const handleExportReport = async () => {
-    if (!dashboardRef.current) return;
+    const isMobile = window.innerWidth < 768;
+    const targetEl = isMobile ? mobileExportRef.current : desktopExportRef.current;
+    if (!targetEl) return;
     setIsExporting(true);
     try {
-      const canvas = await domToCanvas(dashboardRef.current, {
+      const canvas = await domToCanvas(targetEl, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
       });
       
       const formattedMonth = currentStats.month && currentStats.month !== 'Tháng hiện tại'
@@ -1111,6 +1122,141 @@ export default function App() {
           <p className="font-medium tracking-wide">© 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.</p>
         </footer>
       </main>
+
+      {/* Off-screen Export Containers */}
+      <div 
+        style={{ position: 'absolute', left: '-9999px', top: '-9999px' }} 
+        className="pointer-events-none" 
+        aria-hidden="true"
+      >
+        {/* Mobile Export Layout */}
+        <div 
+          ref={mobileExportRef} 
+          style={{ width: '450px' }} 
+          className="bg-[#f8fafc] p-8 rounded-3xl space-y-6"
+        >
+          <header className="px-2 pt-0 pb-6 border-b border-slate-200/60">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight uppercase">BÁO CÁO THÁNG - IPC</h1>
+            <p className="text-sm font-semibold text-slate-400 mt-2 uppercase tracking-wide">
+              {employeeName || 'Người dùng'}
+            </p>
+          </header>
+          
+          <div className="flex flex-col gap-4">
+            <StatCard 
+              title="Số mẫu phân tích"
+              value={currentStats.samples}
+              prevValue={prevStats?.samples}
+              icon={CheckCircle2}
+              colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
+              glowColor="bg-blue-500"
+              unit="mẫu"
+              usePercentage
+              rotation="rotate-[-8deg]"
+              isExport
+            />
+            <StatCard 
+              title="Số ngày làm"
+              value={currentStats.workDays}
+              prevValue={prevStats?.workDays}
+              icon={Briefcase}
+              colorClass="bg-gradient-to-br from-emerald-400 to-emerald-600"
+              glowColor="bg-emerald-500"
+              unit="ngày"
+              rotation="rotate-[8deg]"
+              isExport
+            />
+            <StatCard 
+              title="Số ngày đi trễ"
+              value={currentStats.lateDays}
+              prevValue={prevStats?.lateDays}
+              icon={Clock}
+              colorClass="bg-gradient-to-br from-orange-400 to-orange-600"
+              glowColor="bg-orange-500"
+              unit="ngày"
+              isInverse
+              rotation="rotate-[-8deg]"
+              isExport
+            />
+            <StatCard 
+              title="Số ngày quên chấm"
+              value={currentStats.forgotDays}
+              prevValue={prevStats?.forgotDays}
+              icon={AlertCircle}
+              colorClass="bg-gradient-to-br from-rose-500 to-rose-700"
+              glowColor="bg-rose-500"
+              unit="ngày"
+              isInverse
+              rotation="rotate-[8deg]"
+              isExport
+            />
+          </div>
+        </div>
+
+        {/* Desktop Export Layout */}
+        <div 
+          ref={desktopExportRef} 
+          style={{ width: '1100px' }} 
+          className="bg-[#f8fafc] p-10 rounded-[2rem] space-y-6"
+        >
+          <header className="px-2 pt-0 pb-6 border-b border-slate-200/60">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight uppercase">BÁO CÁO THÁNG - IPC</h1>
+            <p className="text-sm font-semibold text-slate-400 mt-2 uppercase tracking-wide">
+              {employeeName || 'Người dùng'}
+            </p>
+          </header>
+          
+          <div className="grid grid-cols-4 gap-4">
+            <StatCard 
+              title="Số mẫu phân tích"
+              value={currentStats.samples}
+              prevValue={prevStats?.samples}
+              icon={CheckCircle2}
+              colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
+              glowColor="bg-blue-500"
+              unit="mẫu"
+              usePercentage
+              rotation="rotate-[-8deg]"
+              isExport
+            />
+            <StatCard 
+              title="Số ngày làm"
+              value={currentStats.workDays}
+              prevValue={prevStats?.workDays}
+              icon={Briefcase}
+              colorClass="bg-gradient-to-br from-emerald-400 to-emerald-600"
+              glowColor="bg-emerald-500"
+              unit="ngày"
+              rotation="rotate-[8deg]"
+              isExport
+            />
+            <StatCard 
+              title="Số ngày đi trễ"
+              value={currentStats.lateDays}
+              prevValue={prevStats?.lateDays}
+              icon={Clock}
+              colorClass="bg-gradient-to-br from-orange-400 to-orange-600"
+              glowColor="bg-orange-500"
+              unit="ngày"
+              isInverse
+              rotation="rotate-[-8deg]"
+              isExport
+            />
+            <StatCard 
+              title="Số ngày quên chấm"
+              value={currentStats.forgotDays}
+              prevValue={prevStats?.forgotDays}
+              icon={AlertCircle}
+              colorClass="bg-gradient-to-br from-rose-500 to-rose-700"
+              glowColor="bg-rose-500"
+              unit="ngày"
+              isInverse
+              rotation="rotate-[8deg]"
+              isExport
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
