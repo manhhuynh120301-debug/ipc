@@ -168,7 +168,11 @@ const StatCard = ({
       initial={isExport ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: isExport ? 0 : 0.5 }}
-      className="group bg-white dark:bg-slate-900 rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] dark:shadow-none border border-white dark:border-slate-800/60 flex flex-col transition-all duration-500 relative overflow-hidden h-full ring-1 ring-slate-200/50 dark:ring-white/5"
+      className={cn(
+        isExport
+          ? "group bg-white rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col relative overflow-hidden h-full ring-1 ring-slate-200/50"
+          : "group bg-white dark:bg-slate-900 rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] dark:shadow-none border border-white dark:border-slate-800/60 flex flex-col transition-all duration-500 relative overflow-hidden h-full ring-1 ring-slate-200/50 dark:ring-white/5"
+      )}
     >
       {/* Row 1: Icon + Title */}
       <div className="flex items-center gap-3 mb-4">
@@ -182,14 +186,24 @@ const StatCard = ({
           <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
           <Icon className="w-6 h-6 text-white relative z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
         </div>
-        <p className="text-slate-900 dark:text-slate-100 text-base font-bold tracking-tight leading-none">{title}</p>
+        <p className={cn(
+          isExport 
+            ? "text-slate-900 text-base font-bold tracking-tight leading-none"
+            : "text-slate-900 dark:text-slate-100 text-base font-bold tracking-tight leading-none"
+        )}>{title}</p>
       </div>
 
       {/* Row 2 (FLEX): Value + Comparison */}
       <div className="flex items-end justify-between gap-2 mt-auto">
-        <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter flex items-end gap-1 leading-none">
+        <h3 className={cn(
+          "text-4xl font-black tracking-tighter flex items-end gap-1 leading-none",
+          isExport ? "text-slate-900" : "text-slate-900 dark:text-white"
+        )}>
           {isExport ? safeValue.toLocaleString() : <AnimatedNumber value={safeValue} />}
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-1">{unit}</span>
+          <span className={cn(
+            "text-xs font-bold uppercase tracking-tight mb-1",
+            isExport ? "text-slate-400" : "text-slate-400 dark:text-slate-500"
+          )}>{unit}</span>
         </h3>
 
         {hasComparison && (
@@ -202,10 +216,10 @@ const StatCard = ({
               className={cn(
                 "flex items-center gap-0.5 text-xs font-bold leading-none px-2 py-1 rounded-lg transition-colors cursor-default",
                 isUp 
-                  ? "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/10" 
+                  ? (isExport ? "text-emerald-600 bg-emerald-50" : "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/10")
                   : isNeutral 
-                    ? "text-amber-500 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/10" 
-                    : "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/10"
+                    ? (isExport ? "text-amber-500 bg-amber-50" : "text-amber-500 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/10")
+                    : (isExport ? "text-rose-600 bg-rose-50" : "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/10")
               )}
             >
               {isUp ? <TrendingUp className="w-3 h-3" /> : diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
@@ -231,7 +245,10 @@ const StatCard = ({
                 </div>
               )}
             </motion.div>
-            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1.5 leading-none">
+            <p className={cn(
+              "text-[11px] font-medium mt-1.5 leading-none",
+              isExport ? "text-slate-400" : "text-slate-400 dark:text-slate-500"
+            )}>
               tháng trước <span className="font-bold">{safePrevValue}</span>
             </p>
           </div>
