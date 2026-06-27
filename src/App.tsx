@@ -706,7 +706,7 @@ export default function App() {
             {medal ? medal : `${index + 1}`}
           </span>
           <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
-            <span className="text-[15px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
+            <span className="text-[14px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
               {item.name}
             </span>
           </div>
