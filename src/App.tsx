@@ -1148,7 +1148,7 @@ export default function App() {
         </div>
 
         <footer className="px-8 py-6 text-center text-slate-400 dark:text-slate-600 text-xs">
-          <p className="font-medium tracking-wide">© 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.</p>
+          <p className="font-medium tracking-wide">© 2026 IPC DASHBOARD · HỆ THỐNG NỘI BỘ.</p>
         </footer>
       </main>
 
@@ -1289,4 +1289,3 @@ export default function App() {
     </div>
   );
 }
-
