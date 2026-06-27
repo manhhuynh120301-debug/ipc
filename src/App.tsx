@@ -214,14 +214,15 @@ const StatCard = ({
               transition={{ duration: isExport ? 0 : 0.5, ease: "easeOut" }}
               whileHover={isExport ? undefined : { scale: 1.03 }}
               className={cn(
-                "flex items-center gap-0.5 text-xs font-bold leading-none px-2 py-1 rounded-lg transition-colors cursor-default whitespace-nowrap text-nowrap flex-shrink-0",
+                "flex items-center gap-0.5 font-bold leading-none rounded-lg transition-colors cursor-default whitespace-nowrap text-nowrap flex-shrink-0",
+                isExport ? "text-[11px] px-1.5 py-0.5" : "text-xs px-2 py-1",
                 isUp 
                   ? (isExport ? "text-emerald-600 bg-emerald-50" : "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/10")
                   : isNeutral 
                     ? (isExport ? "text-amber-500 bg-amber-50" : "text-amber-500 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/10")
                     : (isExport ? "text-rose-600 bg-rose-50" : "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/10")
               )}
-              style={isExport ? { minWidth: '135px', justifyContent: 'center' } : undefined}
+              style={isExport ? { minWidth: '95px', justifyContent: 'center' } : undefined}
             >
               {isUp ? <TrendingUp className="w-3 h-3 flex-shrink-0" /> : diff < 0 ? <TrendingDown className="w-3 h-3 flex-shrink-0" /> : null}
               {isNeutral ? (
@@ -247,7 +248,7 @@ const StatCard = ({
               )}
             </motion.div>
             <p className={cn(
-              "text-[11px] font-medium mt-1.5 leading-none",
+              "text-[11px] font-medium mt-1.5 leading-none whitespace-nowrap text-nowrap",
               isExport ? "text-slate-400" : "text-slate-400 dark:text-slate-500"
             )}>
               tháng trước <span className="font-bold">{safePrevValue}</span>
