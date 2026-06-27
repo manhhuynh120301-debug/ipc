@@ -214,23 +214,24 @@ const StatCard = ({
               transition={{ duration: isExport ? 0 : 0.5, ease: "easeOut" }}
               whileHover={isExport ? undefined : { scale: 1.03 }}
               className={cn(
-                "flex items-center gap-0.5 text-xs font-bold leading-none px-2 py-1 rounded-lg transition-colors cursor-default",
+                "flex items-center gap-0.5 text-xs font-bold leading-none px-2 py-1 rounded-lg transition-colors cursor-default whitespace-nowrap text-nowrap flex-shrink-0",
                 isUp 
                   ? (isExport ? "text-emerald-600 bg-emerald-50" : "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/10")
                   : isNeutral 
                     ? (isExport ? "text-amber-500 bg-amber-50" : "text-amber-500 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/10")
                     : (isExport ? "text-rose-600 bg-rose-50" : "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/10")
               )}
+              style={isExport ? { minWidth: '135px', justifyContent: 'center' } : undefined}
             >
-              {isUp ? <TrendingUp className="w-3 h-3" /> : diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+              {isUp ? <TrendingUp className="w-3 h-3 flex-shrink-0" /> : diff < 0 ? <TrendingDown className="w-3 h-3 flex-shrink-0" /> : null}
               {isNeutral ? (
-                <span className="text-[10px] uppercase">
+                <span className="text-[10px] uppercase whitespace-nowrap text-nowrap flex-shrink-0">
                   {(title === "Số ngày đi trễ" && safeValue === 0) ? 'Không đi trễ' :
                   (title === "Số ngày quên chấm" && safeValue === 0) ? 'Chấm công đủ' :
                   'DUY TRÌ'}
                 </span>
               ) : (
-                <div className="flex items-center">
+                <div className="flex items-center whitespace-nowrap text-nowrap flex-shrink-0">
                   {usePercentage ? (
                     <>
                       {isExport ? Math.abs(percentChange).toFixed(1) : <AnimatedCounter value={Math.abs(percentChange)} />}
