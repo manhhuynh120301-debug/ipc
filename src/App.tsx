@@ -700,13 +700,13 @@ export default function App() {
       >
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
           <span className={cn(
-            "w-4 sm:w-5 text-center text-sm font-black flex items-center justify-center flex-shrink-0",
-            isTop3 ? "text-indigo-500 text-base" : "text-slate-400"
+            "w-5 sm:w-6 text-center font-black flex items-center justify-center flex-shrink-0 text-[16px] sm:text-[18px]",
+            isTop3 ? "text-indigo-500" : "text-slate-400"
           )}>
             {medal ? medal : `${index + 1}`}
           </span>
           <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
-            <span className="text-[11px] sm:text-sm font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
+            <span className="text-[15px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
               {item.name}
             </span>
           </div>
@@ -714,23 +714,23 @@ export default function App() {
         <div className="text-right flex-shrink-0 ml-1.5 sm:ml-2">
           <div className={cn(
             "rounded-xl sm:rounded-full font-black transition-all",
-            "px-1.5 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border",
+            "px-2 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border",
             isTop3 
               ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" 
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50"
           )}>
             {valueKey === 'samples' ? (
-              <span className="text-[9px] sm:text-xs whitespace-nowrap flex items-center gap-0.5">
+              <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
                 <span>{item.samples}</span>
-                <span className="text-[7.5px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">mẫu</span>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">mẫu</span>
                 <span className="text-slate-300 dark:text-slate-700 mx-0.5">/</span>
                 <span>{item.workDays}</span>
-                <span className="text-[7.5px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">ngày</span>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">ngày</span>
               </span>
             ) : (
-              <span className="text-[9px] sm:text-xs whitespace-nowrap flex items-center gap-0.5">
+              <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
                 <span>{item[valueKey]}</span>
-                <span className="text-[7.5px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500">{unit}</span>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{unit}</span>
               </span>
             )}
           </div>
@@ -1148,7 +1148,7 @@ export default function App() {
         </div>
 
         <footer className="px-8 py-6 text-center text-slate-400 dark:text-slate-600 text-xs">
-          <p className="font-medium tracking-wide">© 2026 IPC DASHBOARD · HỆ THỐNG NỘI BỘ.</p>
+          <p className="font-medium tracking-wide">© 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.</p>
         </footer>
       </main>
 
@@ -1289,3 +1289,4 @@ export default function App() {
     </div>
   );
 }
+
