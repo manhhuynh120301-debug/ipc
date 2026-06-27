@@ -559,15 +559,33 @@ export default function App() {
     document.documentElement.classList.remove('dark');
   }, []);
 
+  const captureWithLightTheme = async (targetEl: HTMLElement) => {
+    const docEl = document.documentElement;
+    const bodyEl = document.body;
+    const hasDarkDoc = docEl.classList.contains('dark');
+    const hasDarkBody = bodyEl.classList.contains('dark');
+    
+    if (hasDarkDoc) docEl.classList.remove('dark');
+    if (hasDarkBody) bodyEl.classList.remove('dark');
+    
+    try {
+      const canvas = await domToCanvas(targetEl, {
+        backgroundColor: '#ffffff',
+        scale: 3,
+      });
+      return canvas;
+    } finally {
+      if (hasDarkDoc) docEl.classList.add('dark');
+      if (hasDarkBody) bodyEl.classList.add('dark');
+    }
+  };
+
   const handleExportPNG = async () => {
     const isMobile = window.innerWidth < 768;
     const targetEl = isMobile ? mobileExportRef.current : desktopExportRef.current;
     if (targetEl) {
       try {
-        const canvas = await domToCanvas(targetEl, {
-          backgroundColor: '#ffffff',
-          scale: 3,
-        });
+        const canvas = await captureWithLightTheme(targetEl);
         const link = document.createElement('a');
         link.download = `dashboard-${currentStats.month}.png`;
         link.href = canvas.toDataURL('image/png');
@@ -583,10 +601,7 @@ export default function App() {
     const targetEl = isMobile ? mobileExportRef.current : desktopExportRef.current;
     if (targetEl) {
       try {
-        const canvas = await domToCanvas(targetEl, {
-          backgroundColor: '#ffffff',
-          scale: 3,
-        });
+        const canvas = await captureWithLightTheme(targetEl);
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgProps = pdf.getImageProperties(imgData);
@@ -606,10 +621,7 @@ export default function App() {
     if (!targetEl) return;
     setIsExporting(true);
     try {
-      const canvas = await domToCanvas(targetEl, {
-        backgroundColor: '#ffffff',
-        scale: 3,
-      });
+      const canvas = await captureWithLightTheme(targetEl);
       
       const formattedMonth = currentStats.month && currentStats.month !== 'Tháng hiện tại'
         ? currentStats.month.replace(/\//g, '-')
