@@ -165,6 +165,73 @@ const StatCard = ({
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   const isIosExport = isExport && isIOS;
 
+  if (isIosExport) {
+    return (
+      <div className="group bg-white rounded-[1.5rem] p-4 sm:p-5 border border-slate-200 flex flex-col relative h-full">
+        {/* Row 1: Icon + Title */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className={cn(
+            "w-11 h-11 rounded-2xl flex items-center justify-center relative shrink-0",
+            colorClass
+          )}>
+            <Icon className="w-6 h-6 text-white relative z-10" />
+          </div>
+          <p className="text-slate-900 text-base font-bold tracking-tight leading-none">{title}</p>
+        </div>
+
+        {/* Row 2 (FLEX): Value + Comparison */}
+        <div className="flex items-end justify-between gap-2 mt-auto">
+          <h3 className="text-4xl font-black tracking-tighter flex items-end gap-1 leading-none text-slate-900">
+            {safeValue.toLocaleString()}
+            <span className="text-xs font-bold uppercase tracking-tight mb-1 text-slate-400">{unit}</span>
+          </h3>
+
+          {hasComparison && (
+            <div className="flex flex-col items-end text-right">
+              <div 
+                className={cn(
+                  "flex items-center gap-0.5 font-bold leading-none rounded-lg transition-colors cursor-default whitespace-nowrap text-nowrap flex-shrink-0 text-[11px] px-1.5 py-0.5",
+                  isUp 
+                    ? "text-emerald-600 bg-emerald-50"
+                    : isNeutral 
+                      ? "text-amber-500 bg-amber-50"
+                      : "text-rose-600 bg-rose-50"
+                )}
+                style={{ minWidth: '95px', justifyContent: 'center' }}
+              >
+                {isUp ? <TrendingUp className="w-3 h-3 flex-shrink-0" /> : diff < 0 ? <TrendingDown className="w-3 h-3 flex-shrink-0" /> : null}
+                {isNeutral ? (
+                  <span className="text-[10px] uppercase whitespace-nowrap text-nowrap flex-shrink-0">
+                    {(title === "Số ngày đi trễ" && safeValue === 0) ? 'Không đi trễ' :
+                    (title === "Số ngày quên chấm" && safeValue === 0) ? 'Chấm công đủ' :
+                    'DUY TRÌ'}
+                  </span>
+                ) : (
+                  <div className="flex items-center whitespace-nowrap text-nowrap flex-shrink-0">
+                    {usePercentage ? (
+                      <>
+                        {Math.abs(percentChange).toFixed(1)}
+                        <span>%</span>
+                      </>
+                    ) : (
+                      <>
+                        {Math.abs(diff).toFixed(0)}
+                        <span className="ml-1 text-[10px] uppercase opacity-80">{unit || 'ngày'}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] font-medium mt-1.5 leading-none whitespace-nowrap text-nowrap text-slate-400">
+                tháng trước <span className="font-bold">{safePrevValue}</span>
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div 
       whileHover={isExport ? undefined : { y: -6, scale: 1.01, boxShadow: "0 30px 60px -12px rgba(0, 0, 0, 0.1)" }}
@@ -172,29 +239,20 @@ const StatCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: isExport ? 0 : 0.5 }}
       className={cn(
-        isIosExport
-          ? "group bg-white rounded-[1.5rem] p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-col relative h-full"
-          : isExport
-            ? "group bg-white rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col relative overflow-hidden h-full ring-1 ring-slate-200/50"
-            : "group bg-white dark:bg-slate-900 rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] dark:shadow-none border border-white dark:border-slate-800/60 flex flex-col transition-all duration-500 relative overflow-hidden h-full ring-1 ring-slate-200/50 dark:ring-white/5"
+        isExport
+          ? "group bg-white rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col relative overflow-hidden h-full ring-1 ring-slate-200/50"
+          : "group bg-white dark:bg-slate-900 rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] dark:shadow-none border border-white dark:border-slate-800/60 flex flex-col transition-all duration-500 relative overflow-hidden h-full ring-1 ring-slate-200/50 dark:ring-white/5"
       )}
     >
       {/* Row 1: Icon + Title */}
       <div className="flex items-center gap-3 mb-4">
         <div className={cn(
           "w-11 h-11 rounded-2xl flex items-center justify-center relative shrink-0",
-          isIosExport 
-            ? "shadow-none transform-none transition-none" 
-            : cn("shadow-sm transform transition-all duration-500 group-hover:rotate-0", rotation),
+          cn("shadow-sm transform transition-all duration-500 group-hover:rotate-0", rotation),
           colorClass
         )}>
-          {!isIosExport && (
-            <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
-          )}
-          <Icon className={cn(
-            "w-6 h-6 text-white relative z-10",
-            isIosExport ? "" : "drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]"
-          )} />
+          <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
+          <Icon className="w-6 h-6 text-white relative z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
         </div>
         <p className={cn(
           isExport 
@@ -946,23 +1004,25 @@ export default function App() {
               </div>
               <div className="space-y-1 w-full max-w-full min-w-0 overflow-hidden">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-tight ml-1">Tháng báo cáo</label>
-                <input 
-                  type="month" 
-                  value={reportingMonth}
-                  onChange={e => setReportingMonth(e.target.value)}
-                  className="w-full max-w-full min-w-0 box-border overflow-hidden px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer"
-                />
+                <div className="relative w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
+                  <input 
+                    type="month" 
+                    value={reportingMonth}
+                    onChange={e => setReportingMonth(e.target.value)}
+                    className="w-full max-w-full min-w-0 box-border overflow-hidden px-4 py-2 bg-transparent text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer [appearance:none] [-webkit-appearance:none]"
+                  />
+                </div>
               </div>
               <div className="space-y-1 relative w-full max-w-full min-w-0 overflow-hidden">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-tight ml-1 flex justify-between">
                   Tháng đối chiếu
                 </label>
-                <div className="relative w-full max-w-full min-w-0 overflow-hidden">
+                <div className="relative w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
                   <input 
                     type="month" 
                     value={comparisonMonth}
                     onChange={e => setComparisonMonth(e.target.value)}
-                    className="w-full max-w-full min-w-0 box-border overflow-hidden px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer"
+                    className="w-full max-w-full min-w-0 box-border overflow-hidden px-4 py-2 bg-transparent text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer [appearance:none] [-webkit-appearance:none]"
                   />
                 </div>
               </div>
@@ -1202,12 +1262,14 @@ export default function App() {
               </div>
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto max-w-full min-w-0 overflow-hidden">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Chọn tháng</span>
-                <input 
-                  type="month" 
-                  value={rankingMonth}
-                  onChange={e => setRankingMonth(e.target.value)}
-                  className="w-full sm:w-auto max-w-full min-w-0 box-border overflow-hidden px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-[16px] md:text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                />
+                <div className="relative w-full sm:w-auto max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
+                  <input 
+                    type="month" 
+                    value={rankingMonth}
+                    onChange={e => setRankingMonth(e.target.value)}
+                    className="w-full sm:w-auto max-w-full min-w-0 box-border overflow-hidden px-3 py-1.5 bg-transparent text-slate-900 dark:text-white font-bold text-[16px] md:text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 [appearance:none] [-webkit-appearance:none]"
+                  />
+                </div>
               </div>
             </div>
 
