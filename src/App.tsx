@@ -33,7 +33,7 @@ import {
   Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import html2canvas from 'html2canvas';
+import { domToCanvas } from 'modern-screenshot';
 import { jsPDF } from 'jspdf';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -539,30 +539,38 @@ export default function App() {
 
   const handleExportPNG = async () => {
     if (dashboardRef.current) {
-      const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-      });
-      const link = document.createElement('a');
-      link.download = `dashboard-${currentStats.month}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      try {
+        const canvas = await domToCanvas(dashboardRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        });
+        const link = document.createElement('a');
+        link.download = `dashboard-${currentStats.month}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        console.error('Error exporting PNG:', err);
+      }
     }
   };
 
   const handleExportPDF = async () => {
     if (dashboardRef.current) {
-      const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, pdf.internal.pageSize.getHeight()));
-      pdf.save(`dashboard-${currentStats.month}.pdf`);
+      try {
+        const canvas = await domToCanvas(dashboardRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, pdf.internal.pageSize.getHeight()));
+        pdf.save(`dashboard-${currentStats.month}.pdf`);
+      } catch (err) {
+        console.error('Error exporting PDF:', err);
+      }
     }
   };
 
@@ -570,10 +578,9 @@ export default function App() {
     if (!dashboardRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(dashboardRef.current, {
+      const canvas = await domToCanvas(dashboardRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
-        useCORS: true
       });
       
       const formattedMonth = currentStats.month && currentStats.month !== 'Tháng hiện tại'
