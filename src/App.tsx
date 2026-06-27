@@ -180,11 +180,11 @@ const StatCard = ({
       {/* Row 1: Icon + Title */}
       <div className="flex items-center gap-3 mb-4">
         <div className={cn(
-          "w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm transform transition-all duration-500",
-          rotation,
-          "group-hover:rotate-0",
-          colorClass,
-          "relative shrink-0"
+          "w-11 h-11 rounded-2xl flex items-center justify-center relative shrink-0",
+          isIosExport 
+            ? "shadow-none transform-none transition-none" 
+            : cn("shadow-sm transform transition-all duration-500 group-hover:rotate-0", rotation),
+          colorClass
         )}>
           {!isIosExport && (
             <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
