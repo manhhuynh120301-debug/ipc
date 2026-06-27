@@ -301,6 +301,10 @@ export default function App() {
   const mobileExportRef = useRef<HTMLDivElement>(null);
   const desktopExportRef = useRef<HTMLDivElement>(null);
 
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showPwaPrompt, setShowPwaPrompt] = useState<boolean>(false);
+  const [pwaPlatform, setPwaPlatform] = useState<'ios' | 'android_chrome' | null>(null);
+
   // Helper date conversions
   const toMonthYear = (yyyyMm: string): string => {
     if (!yyyyMm) return '';
@@ -561,6 +565,56 @@ export default function App() {
     document.documentElement.classList.remove('dark');
   }, []);
 
+  useEffect(() => {
+    const checkPwaStatus = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+      const dismissedTime = localStorage.getItem('pwa-install-dismissed');
+      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+      const isDismissedRecently = dismissedTime && (Date.now() - parseInt(dismissedTime) < sevenDaysInMs);
+
+      return !isStandalone && !isDismissedRecently;
+    };
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    
+    if (checkPwaStatus() && isIOS) {
+      setShowPwaPrompt(true);
+      setPwaPlatform('ios');
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      if (checkPwaStatus()) {
+        setShowPwaPrompt(true);
+        setPwaPlatform('android_chrome');
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+    setDeferredPrompt(null);
+    setShowPwaPrompt(false);
+  };
+
+  const handleDismissPwa = () => {
+    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    setShowPwaPrompt(false);
+  };
+
   const captureWithLightTheme = async (targetEl: HTMLElement) => {
     const docEl = document.documentElement;
     const bodyEl = document.body;
@@ -777,6 +831,66 @@ export default function App() {
       {/* Main Content */}
       <main className="w-full max-w-full overflow-hidden flex flex-col">
         <div className="px-6 pt-4 pb-6 space-y-6 flex-1 min-h-0 overflow-y-auto">
+          {/* PWA Install Prompt Card */}
+          <AnimatePresence>
+            {showPwaPrompt && pwaPlatform && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="max-w-6xl mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
+              >
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex-shrink-0">
+                    <span className="text-2xl" role="img" aria-label="smartphone">📲</span>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
+                      Cài đặt BC IPC
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm mt-1 leading-relaxed">
+                      {pwaPlatform === 'ios' 
+                        ? "Nhấn Chia sẻ → Thêm vào màn hình chính để sử dụng thuận tiện hơn." 
+                        : "Cài đặt để sử dụng nhanh hơn và thuận tiện hơn."}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 sm:self-center self-end">
+                  {pwaPlatform === 'ios' ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDismissPwa}
+                      className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                    >
+                      Đóng
+                    </motion.button>
+                  ) : (
+                    <>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleDismissPwa}
+                        className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                      >
+                        Để sau
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)" }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleInstallPwa}
+                        className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-md shadow-indigo-500/10 cursor-pointer"
+                      >
+                        Cài đặt
+                      </motion.button>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <motion.section 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -1150,7 +1264,7 @@ export default function App() {
         </div>
 
         <footer className="px-8 py-6 text-center text-slate-400 dark:text-slate-600 text-xs">
-          <p className="font-medium tracking-wide">© 2026 IPC DASHBOARD · HỆ THỐNG NỘI BỘ.</p>
+          <p className="font-medium tracking-wide">© 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.</p>
         </footer>
       </main>
 
