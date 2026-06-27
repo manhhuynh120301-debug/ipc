@@ -137,7 +137,8 @@ const StatCard = ({
   unit = '',
   usePercentage = false,
   isInverse = false,
-  rotation = "rotate-0"
+  rotation = "rotate-0",
+  isStatic = false
 }: { 
   title: string; 
   value: number | null; 
@@ -149,6 +150,7 @@ const StatCard = ({
   usePercentage?: boolean;
   isInverse?: boolean;
   rotation?: string;
+  isStatic?: boolean;
 }) => {
   const hasComparison = prevValue !== undefined && prevValue !== null;
   const safeValue = value || 0;
@@ -160,81 +162,106 @@ const StatCard = ({
   const isNeutral = diff === 0;
   const isUp = diff > 0;
 
+  const motionProps = isStatic ? {} : {
+    whileHover: { y: -6, scale: 1.01, boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.05)" },
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 }
+  };
+
+  const Component = isStatic ? 'div' : motion.div;
+
   return (
-    <motion.div 
-      whileHover={{ y: -6, scale: 1.01, boxShadow: "0 30px 60px -12px rgba(0, 0, 0, 0.1)" }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group bg-white dark:bg-slate-900 rounded-[1.5rem] p-4 sm:p-5 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.06),0_8px_20px_-10px_rgba(0,0,0,0.03)] dark:shadow-none border border-white dark:border-slate-800/60 flex flex-col transition-all duration-500 relative overflow-hidden h-full ring-1 ring-slate-200/50 dark:ring-white/5"
+    <Component 
+      {...motionProps}
+      className={cn(
+        "group bg-white rounded-[1.75rem] border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex items-center justify-between transition-all duration-500 relative overflow-hidden h-full",
+        isStatic ? "p-6 gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.015)] border-slate-200/60" : "p-3.5 xs:p-4 sm:p-5 md:p-6 gap-2.5 sm:gap-4"
+      )}
     >
-      {/* Row 1: Icon + Title */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className={cn(
-          "w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm transform transition-all duration-500",
-          rotation,
-          "group-hover:rotate-0",
-          colorClass,
-          "relative shrink-0"
-        )}>
-          <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />
-          <Icon className="w-6 h-6 text-white relative z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
-        </div>
-        <p className="text-slate-900 dark:text-slate-100 text-base font-bold tracking-tight leading-none">{title}</p>
-      </div>
-
-      {/* Row 2 (FLEX): Value + Comparison */}
-      <div className="flex items-end justify-between gap-2 mt-auto">
-        <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter flex items-end gap-1 leading-none">
-          <AnimatedNumber value={safeValue} />
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-1">{unit}</span>
-        </h3>
-
-        {hasComparison && (
-          <div className="flex flex-col items-end text-right">
-            <motion.div 
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.03 }}
-              className={cn(
-                "flex items-center gap-0.5 text-xs font-bold leading-none px-2 py-1 rounded-lg transition-colors cursor-default",
-                isUp 
-                  ? "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/10" 
-                  : isNeutral 
-                    ? "text-amber-500 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/10" 
-                    : "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/10"
-              )}
-            >
-              {isUp ? <TrendingUp className="w-3 h-3" /> : diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
-              {isNeutral ? (
-                <span className="text-[10px] uppercase">
-                  {(title === "Số ngày đi trễ" && safeValue === 0) ? 'Không đi trễ' :
-                  (title === "Số ngày quên chấm" && safeValue === 0) ? 'Chấm công đủ' :
-                  'DUY TRÌ'}
-                </span>
-              ) : (
-                <div className="flex items-center">
-                  {usePercentage ? (
-                    <>
-                      <AnimatedCounter value={Math.abs(percentChange)} />
-                      <span>%</span>
-                    </>
-                  ) : (
-                    <>
-                      <AnimatedCounter value={Math.abs(diff)} decimals={0} />
-                      <span className="ml-1 text-[10px] uppercase opacity-80">{unit || 'ngày'}</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </motion.div>
-            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1.5 leading-none">
-              tháng trước <span className="font-bold">{safePrevValue}</span>
-            </p>
+      {/* Left side: Icon, Title, and Value */}
+      <div className="flex flex-col gap-2 sm:gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={cn(
+            "rounded-2xl flex items-center justify-center shadow-sm transform transition-all duration-500 relative z-10 shrink-0",
+            isStatic ? "w-10 h-10" : "w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10",
+            rotation,
+            !isStatic && "group-hover:rotate-0",
+            colorClass
+          )}>
+            {!isStatic && <div className={cn("absolute inset-0 rounded-2xl blur-md opacity-40 animate-pulse", glowColor)} />}
+            <Icon className={cn("text-white relative z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]", isStatic ? "w-5 h-5" : "w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5")} />
           </div>
-        )}
+          <p className={cn(
+            "text-slate-900 font-extrabold tracking-tight leading-tight uppercase",
+            isStatic ? "text-xs" : "text-[10px] xs:text-[11px] sm:text-xs md:text-sm whitespace-normal break-words flex-1"
+          )}>
+            {title}
+          </p>
+        </div>
+        
+        <h3 className={cn(
+          "font-extrabold text-[#0f172a] tracking-tight flex items-baseline gap-1 leading-none mt-1",
+          isStatic ? "text-3xl" : "text-xl xs:text-2xl sm:text-3xl"
+        )}>
+          {isStatic ? safeValue.toLocaleString() : <AnimatedNumber value={safeValue} />}
+          <span className={cn(
+            "font-bold text-slate-400 uppercase tracking-wider",
+            isStatic ? "text-[10px]" : "text-[8px] xs:text-[9px] sm:text-[10px]"
+          )}>
+            {unit}
+          </span>
+        </h3>
       </div>
-    </motion.div>
+
+      {/* Right side: Trend badge + Previous month comparison */}
+      {hasComparison && (
+        <div className="flex flex-col items-end text-right shrink-0 gap-1.5 sm:gap-2">
+          <div 
+            className={cn(
+              "flex items-center gap-0.5 font-extrabold leading-none rounded-xl transition-colors cursor-default border",
+              isUp 
+                ? "text-emerald-600 bg-emerald-50 border-emerald-100" 
+                : isNeutral 
+                  ? "text-amber-500 bg-amber-50 border-amber-100" 
+                  : "text-rose-600 bg-rose-50 border-rose-100",
+              isStatic ? "px-2 py-1.5 text-xs" : "px-1.5 py-1 xs:px-2 xs:py-1.5 text-[9px] xs:text-[10px] sm:text-xs"
+            )}
+          >
+            {isUp ? <TrendingUp className="w-3 h-3 shrink-0" /> : diff < 0 ? <TrendingDown className="w-3 h-3 shrink-0" /> : null}
+            {isNeutral ? (
+              <span className={cn(
+                "uppercase tracking-wider font-extrabold",
+                isStatic ? "text-[9px]" : "text-[8px] xs:text-[9px]"
+              )}>
+                {(title === "Số ngày đi trễ" && safeValue === 0) ? 'Không trễ' :
+                (title === "Số ngày quên chấm" && safeValue === 0) ? 'Đủ' :
+                'DUY TRÌ'}
+              </span>
+            ) : (
+              <div className="flex items-center font-extrabold whitespace-nowrap">
+                {usePercentage ? (
+                  <>
+                    {isStatic ? Math.abs(percentChange).toFixed(1) : <AnimatedCounter value={Math.abs(percentChange)} />}
+                    <span>%</span>
+                  </>
+                ) : (
+                  <>
+                    {isStatic ? Math.abs(diff).toFixed(0) : <AnimatedCounter value={Math.abs(diff)} decimals={0} />}
+                    <span className="ml-0.5 text-[9px] uppercase opacity-80">{unit || 'ngày'}</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          <p className={cn(
+            "font-semibold text-slate-400 mt-0.5 leading-none",
+            isStatic ? "text-[10px]" : "text-[8px] xs:text-[9px] sm:text-[10px]"
+          )}>
+            tháng trước <span className="font-extrabold text-[#0f172a]">{safePrevValue}</span>
+          </p>
+        </div>
+      )}
+    </Component>
   );
 };
 
@@ -276,6 +303,7 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const exportContainerRef = useRef<HTMLDivElement>(null);
 
   // Helper date conversions
   const toMonthYear = (yyyyMm: string): string => {
@@ -538,11 +566,12 @@ export default function App() {
   }, []);
 
   const handleExportPNG = async () => {
-    if (dashboardRef.current) {
+    const targetEl = exportContainerRef.current || dashboardRef.current;
+    if (targetEl) {
       try {
-        const canvas = await domToCanvas(dashboardRef.current, {
-          backgroundColor: '#ffffff',
-          scale: 2,
+        const canvas = await domToCanvas(targetEl, {
+          backgroundColor: '#f8fafc',
+          scale: 2.5,
         });
         const link = document.createElement('a');
         link.download = `dashboard-${currentStats.month}.png`;
@@ -555,11 +584,12 @@ export default function App() {
   };
 
   const handleExportPDF = async () => {
-    if (dashboardRef.current) {
+    const targetEl = exportContainerRef.current || dashboardRef.current;
+    if (targetEl) {
       try {
-        const canvas = await domToCanvas(dashboardRef.current, {
-          backgroundColor: '#ffffff',
-          scale: 2,
+        const canvas = await domToCanvas(targetEl, {
+          backgroundColor: '#f8fafc',
+          scale: 2.5,
         });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -575,12 +605,13 @@ export default function App() {
   };
 
   const handleExportReport = async () => {
-    if (!dashboardRef.current) return;
+    const targetEl = exportContainerRef.current || dashboardRef.current;
+    if (!targetEl) return;
     setIsExporting(true);
     try {
-      const canvas = await domToCanvas(dashboardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
+      const canvas = await domToCanvas(targetEl, {
+        backgroundColor: '#f8fafc',
+        scale: 2.5,
       });
       
       const formattedMonth = currentStats.month && currentStats.month !== 'Tháng hiện tại'
@@ -947,17 +978,17 @@ export default function App() {
           </div>
 
           {/* This container will be exported as the actual Report PNG */}
-          <div ref={dashboardRef} className="max-w-4xl mx-auto space-y-4 bg-slate-50/40 dark:bg-slate-950 p-6 sm:p-10 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-slate-800">
+          <div ref={dashboardRef} className="max-w-4xl mx-auto space-y-6 bg-[#f8fafc] p-8 sm:p-12 rounded-[2rem] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.05)] border border-slate-200/60">
             {/* REPORT HEADER */}
-            <header className="px-2 pt-0 pb-6 border-b border-slate-200/60 dark:border-slate-800/60">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight uppercase">BÁO CÁO THÁNG - IPC</h1>
-              <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-wide">
+            <header className="px-2 pt-0 pb-6 border-b border-slate-200">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] tracking-tight leading-tight uppercase">BÁO CÁO THÁNG – IPC</h1>
+              <p className="text-sm font-semibold text-slate-500 mt-2 uppercase tracking-wide">
                 {employeeName || 'Người dùng'}
               </p>
             </header>
 
             {/* KPI Section */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <StatCard 
               title="Số mẫu phân tích"
               value={currentStats.samples}
@@ -1002,6 +1033,78 @@ export default function App() {
               rotation="rotate-[8deg]"
             />
           </section>
+          </div>
+
+          {/* Hidden export-only container with fixed size for consistent high-quality export on all devices */}
+          <div 
+            ref={exportContainerRef} 
+            className="bg-[#f8fafc] p-12 rounded-[2rem] border border-slate-200/60 flex flex-col gap-8"
+            style={{ 
+              position: 'absolute', 
+              left: '-9999px', 
+              top: '-9999px', 
+              width: '800px',
+              display: 'block' 
+            }}
+          >
+            {/* REPORT HEADER */}
+            <header className="px-2 pt-0 pb-6 border-b border-slate-200">
+              <h1 className="text-3xl font-extrabold text-[#0f172a] tracking-tight leading-tight uppercase">BÁO CÁO THÁNG – IPC</h1>
+              <p className="text-sm font-semibold text-slate-500 mt-2 uppercase tracking-wide">
+                {employeeName || 'Người dùng'}
+              </p>
+            </header>
+
+            {/* KPI Section */}
+            <div className="grid grid-cols-2 gap-6">
+              <StatCard 
+                title="Số mẫu phân tích"
+                value={currentStats.samples}
+                prevValue={prevStats?.samples}
+                icon={CheckCircle2}
+                colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
+                glowColor="bg-blue-500"
+                unit="mẫu"
+                usePercentage
+                rotation="rotate-[-8deg]"
+                isStatic
+              />
+              <StatCard 
+                title="Số ngày làm"
+                value={currentStats.workDays}
+                prevValue={prevStats?.workDays}
+                icon={Briefcase}
+                colorClass="bg-gradient-to-br from-emerald-400 to-emerald-600"
+                glowColor="bg-emerald-500"
+                unit="ngày"
+                rotation="rotate-[8deg]"
+                isStatic
+              />
+              <StatCard 
+                title="Số ngày đi trễ"
+                value={currentStats.lateDays}
+                prevValue={prevStats?.lateDays}
+                icon={Clock}
+                colorClass="bg-gradient-to-br from-orange-400 to-orange-600"
+                glowColor="bg-orange-500"
+                unit="ngày"
+                isInverse
+                rotation="rotate-[-8deg]"
+                isStatic
+              />
+              <StatCard 
+                title="Số ngày quên chấm"
+                value={currentStats.forgotDays}
+                prevValue={prevStats?.forgotDays}
+                icon={AlertCircle}
+                colorClass="bg-gradient-to-br from-rose-500 to-rose-700"
+                glowColor="bg-rose-500"
+                unit="ngày"
+                isInverse
+                rotation="rotate-[8deg]"
+                isStatic
+              />
+            </div>
           </div>
 
           {/* Export Report Button */}
