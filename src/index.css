@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @variant dark (.dark &);
@@ -71,6 +71,76 @@
   .app-bottom-banner {
     height: 280px;
     background-size: 70% auto;
+  }
+}
+
+/* Responsive top banner clock styles */
+.carousel-clock-time {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-size: 28px; /* Default for small mobile (<480px) */
+  line-height: 1.1;
+  user-select: none;
+}
+
+@media (min-width: 480px) {
+  .carousel-clock-time {
+    font-size: 32px;
+  }
+}
+
+@media (min-width: 768px) {
+  .carousel-clock-time {
+    font-size: 44px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-clock-time {
+    font-size: 56px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .carousel-clock-time {
+    font-size: 64px;
+  }
+}
+
+.carousel-clock-date {
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
+  font-weight: 500;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-size: 12px; /* Default for small mobile (<480px) */
+  margin-top: 4px;
+  user-select: none;
+}
+
+@media (min-width: 480px) {
+  .carousel-clock-date {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 768px) {
+  .carousel-clock-date {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-clock-date {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .carousel-clock-date {
+    font-size: 24px;
   }
 }
 
