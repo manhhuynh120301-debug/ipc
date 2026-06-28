@@ -41,9 +41,9 @@ import { twMerge } from 'tailwind-merge';
 // @ts-ignore
 import topBanner from './assets/banner-top.png';
 // @ts-ignore
-import topBanner2 from './assets/images/banner_top2_1782658687104.jpg';
+import topBanner2 from './assets/images/banner-top2.png';
 // @ts-ignore
-import topBanner3 from './assets/images/banner_top3_1782658701996.jpg';
+import topBanner3 from './assets/images/banner-top3.png';
 // @ts-ignore
 import bottomBanner from './assets/banner-bottom.webp';
 
