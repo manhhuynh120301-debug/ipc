@@ -41,9 +41,9 @@ import { twMerge } from 'tailwind-merge';
 // @ts-ignore
 import topBanner from './assets/banner-top.png';
 // @ts-ignore
-import topBanner2 from './assets/images/banner-top2.png';
+import topBanner2 from './assets/images/banner_top2_1782658687104.jpg';
 // @ts-ignore
-import topBanner3 from './assets/images/banner-top3.png';
+import topBanner3 from './assets/images/banner_top3_1782658701996.jpg';
 // @ts-ignore
 import bottomBanner from './assets/banner-bottom.webp';
 
@@ -1241,11 +1241,11 @@ export default function App() {
           }}
         >
           {bannerImages.map((src, idx) => (
-            <div key={idx} className="w-1/3 h-full flex-shrink-0 relative">
+            <div key={idx} className="w-1/3 h-full flex-shrink-0 relative bg-[#060a16]">
               <img 
                 src={src} 
                 alt={`Banner slide ${idx + 1}`}
-                className="w-full h-full object-cover object-center block"
+                className="w-full h-full object-cover lg:object-contain object-center block"
                 referrerPolicy="no-referrer"
               />
               {/* Subtle overlay to ensure readability */}
@@ -1299,23 +1299,10 @@ export default function App() {
         
         <div className="max-w-6xl mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
           <div className="absolute right-[6%] top-1/2 -translate-y-1/2 text-right z-10 select-none">
-            <div 
-              className="font-mono text-white leading-[1.1] font-bold select-none"
-              style={{ 
-                fontSize: '42px',
-                textShadow: '0 2px 8px rgba(0,0,0,0.12)' 
-              }}
-            >
+            <div className="carousel-clock-time">
               {formattedTime}
             </div>
-            <div 
-              className="font-sans font-normal mt-1 select-none"
-              style={{ 
-                fontSize: '16px',
-                color: 'rgba(255,255,255,0.95)',
-                textShadow: '0 2px 8px rgba(0,0,0,0.12)' 
-              }}
-            >
+            <div className="carousel-clock-date">
               {formattedDate}
             </div>
           </div>
