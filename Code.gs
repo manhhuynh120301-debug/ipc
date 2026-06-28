@@ -157,6 +157,46 @@ function doGet(e) {
     });
   }
 
+  if (action === "notifications") {
+    var empSheet = ss.getSheetByName("Nhân viên");
+    var employeesMap = {};
+    if (empSheet) {
+      var empValues = empSheet.getDataRange().getValues();
+      for (var i = 1; i < empValues.length; i++) {
+        if (empValues[i][0] && empValues[i][1]) {
+          employeesMap[empValues[i][0].toString().trim().toUpperCase()] = empValues[i][1].toString().trim();
+        }
+      }
+    }
+
+    var sheet = ss.getSheetByName("Báo cáo tháng");
+    if (!sheet) {
+      return createJsonResponse({ notifications: [] });
+    }
+    var values = sheet.getDataRange().getValues();
+    var list = [];
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i];
+      var msnv = row[0] ? row[0].toString().trim().toUpperCase() : "";
+      var updateDate = row[6] ? row[6].toString().trim() : "";
+      var fullName = row[7] ? row[7].toString().trim() : "";
+      
+      // Fallback if Column H is blank but MSNV exists in employee map
+      if (!fullName && msnv && employeesMap[msnv]) {
+        fullName = employeesMap[msnv];
+      }
+      
+      if (updateDate && fullName) {
+        list.push({
+          date: updateDate,
+          name: fullName,
+          month: row[1] ? row[1].toString().trim() : ""
+        });
+      }
+    }
+    return createJsonResponse({ notifications: list });
+  }
+
   return createJsonResponse({ error: "Unknown GET action: " + action });
 }
 
@@ -195,6 +235,19 @@ function doPost(e) {
         return createJsonResponse({ success: false, error: "Báo cáo tháng sheet not found" });
       }
 
+      // Fetch employee's name for Column H
+      var empSheet = ss.getSheetByName("Nhân viên");
+      var employeeName = postData.name || "";
+      if (!employeeName && empSheet) {
+        var empValues = empSheet.getDataRange().getValues();
+        for (var i = 1; i < empValues.length; i++) {
+          if (empValues[i][0] && empValues[i][0].toString().trim().toUpperCase() === msnv) {
+            employeeName = empValues[i][1].toString().trim();
+            break;
+          }
+        }
+      }
+
       // Format current timestamp in Vietnam Timezone
       var dateString = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
 
@@ -205,7 +258,8 @@ function doPost(e) {
         workDays,
         lateDays,
         forgotDays,
-        dateString
+        dateString,
+        employeeName
       ]);
 
       return createJsonResponse({ success: true });
