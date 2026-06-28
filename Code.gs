@@ -178,7 +178,15 @@ function doGet(e) {
     for (var i = 1; i < values.length; i++) {
       var row = values[i];
       var msnv = row[0] ? row[0].toString().trim().toUpperCase() : "";
-      var updateDate = row[6] ? row[6].toString().trim() : "";
+      var rawDate = row[6];
+      var updateDate = "";
+      if (rawDate) {
+        if (rawDate instanceof Date) {
+          updateDate = Utilities.formatDate(rawDate, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+        } else {
+          updateDate = rawDate.toString().trim();
+        }
+      }
       var fullName = row[7] ? row[7].toString().trim() : "";
       
       // Fallback if Column H is blank but MSNV exists in employee map
