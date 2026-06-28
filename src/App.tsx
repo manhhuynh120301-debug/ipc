@@ -1189,11 +1189,11 @@ export default function App() {
           {unreadCount > 0 && (
             <span 
               id="notif-unread-red-dot"
-              className="absolute top-[10px] right-[10px] rounded-full bg-[#FF3B30]"
+              className="absolute top-[11px] right-[11px] rounded-full bg-[#FF3B30]"
               style={{
-                width: '10px',
-                height: '10px',
-                boxShadow: '0 0 8px 2px rgba(255, 59, 48, 0.8)',
+                width: '8px',
+                height: '8px',
+                boxShadow: '0 0 8px rgba(255, 59, 48, 0.35)',
               }}
             />
           )}
@@ -1230,7 +1230,7 @@ export default function App() {
           <>
             <div 
               id="notif-panel-backdrop"
-              className="fixed inset-0 z-40 bg-black/15 backdrop-blur-[1px]" 
+              className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[1px]" 
               onClick={() => setIsNotifPanelOpen(false)} 
             />
 
@@ -1240,11 +1240,13 @@ export default function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="fixed z-50 bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl max-h-[420px] overflow-y-auto
+              className="fixed z-50 bg-white/98 backdrop-blur-xl border border-slate-100 p-5 flex flex-col gap-4 shadow-2xl max-h-[420px] overflow-y-auto
                          w-[calc(100%-32px)] sm:w-[380px]"
               style={{
+                borderRadius: '24px',
                 top: isMobile ? '80px' : `${16 - Math.min(scrollY * 0.6, 240) + 48}px`,
                 right: isMobile ? '16px' : '18px',
+                boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
               }}
             >
               {/* Panel Title Header */}
@@ -1271,24 +1273,28 @@ export default function App() {
                     <div 
                       key={idx}
                       id={`notif-card-${idx}`}
-                      className="flex flex-col gap-1 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                      className="flex flex-col gap-2 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
                       style={{
-                        background: 'linear-gradient(135deg, #FFFDF5, #FFFBEA)',
-                        border: '1px solid #FFE58F',
+                        background: '#ffffff',
+                        border: '1px solid #f1f5f9',
                         borderRadius: '20px',
-                        padding: '14px',
-                        boxShadow: '0 4px 18px rgba(255, 214, 10, 0.15)',
+                        padding: '18px 20px',
+                        boxShadow: '0 4px 18px rgba(148, 163, 184, 0.12)',
                       }}
                     >
-                      <div className="flex items-center gap-1.5 text-amber-600/80 font-mono text-[11px] font-medium">
-                        <span>🕒</span>
-                        <span>{formatNotificationDate(notif.date)}</span>
+                      <div 
+                        className="font-mono text-amber-500"
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          color: '#f59e0b'
+                        }}
+                      >
+                        {formatNotificationDate(notif.date)}
                       </div>
-                      <div className="text-slate-900 font-sans font-bold text-[14px]">
-                        {notif.name}
-                      </div>
-                      <div className="text-slate-600 font-sans text-[12px]">
-                        đã cập nhật báo cáo tháng
+                      <div className="font-sans text-[15px] leading-snug">
+                        <span style={{ fontWeight: 700, color: '#1e293b' }}>{notif.name}</span>
+                        <span style={{ fontWeight: 500, color: '#475569' }}> đã cập nhật báo cáo</span>
                       </div>
                     </div>
                   ))
