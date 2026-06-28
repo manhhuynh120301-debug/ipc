@@ -30,13 +30,18 @@ import {
   CheckCircle2,
   Activity,
   User,
-  Share2
+  Share2,
+  Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { domToCanvas } from 'modern-screenshot';
 import { jsPDF } from 'jspdf';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+// @ts-ignore
+import topBanner from './assets/banner-top.png';
+// @ts-ignore
+import bottomBanner from './assets/banner-bottom.webp';
 
 /** Utility for tailwind classes */
 function cn(...inputs: ClassValue[]) {
@@ -347,6 +352,40 @@ export default function App() {
   const [employeeName, setEmployeeName] = useState('');
   const [employeeError, setEmployeeError] = useState('');
   
+  // Realtime clock state for the header banner
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [scrollY, setScrollY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const clockTimer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(clockTimer);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run initially to capture current position
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
   const [reportingMonth, setReportingMonth] = useState('2026-07');
   const [comparisonMonth, setComparisonMonth] = useState('2026-06');
 
@@ -381,6 +420,79 @@ export default function App() {
     const [year, month] = yyyyMm.split('-');
     return `${month}/${year}`;
   };
+
+  // Cross-platform bulletproof custom date parsing (dd/mm/yyyy hh:mm:ss)
+  const parseCustomDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    try {
+      const cleanStr = dateStr.replace(/,/g, '').trim();
+      const parts = cleanStr.split(/\s+/);
+      if (parts.length < 1) return null;
+
+      const datePart = parts[0];
+      const timePart = parts[1] || "00:00:00";
+
+      const dParts = datePart.split('/');
+      if (dParts.length !== 3) {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      const day = parseInt(dParts[0]);
+      const month = parseInt(dParts[1]) - 1; // 0-indexed
+      const year = parseInt(dParts[2]);
+
+      const tParts = timePart.split(':');
+      const hours = tParts[0] ? parseInt(tParts[0]) : 0;
+      const minutes = tParts[1] ? parseInt(tParts[1]) : 0;
+      const seconds = tParts[2] ? parseInt(tParts[2]) : 0;
+
+      const d = new Date(year, month, day, hours, minutes, seconds);
+      return isNaN(d.getTime()) ? null : d;
+    } catch (err) {
+      console.error("Error parsing date:", dateStr, err);
+      return null;
+    }
+  };
+
+  // Calculate Start and End Date for a given report month
+  const getCycleBounds = (reportingMonthStr: string) => {
+    let year = 2026;
+    let month = 6;
+    
+    if (reportingMonthStr.includes('-')) {
+      const parts = reportingMonthStr.split('-');
+      year = parseInt(parts[0]);
+      month = parseInt(parts[1]);
+    } else if (reportingMonthStr.includes('/')) {
+      const parts = reportingMonthStr.split('/');
+      month = parseInt(parts[0]);
+      year = parseInt(parts[1]);
+    }
+
+    // Start date: 1st of reportingMonthStr month at 00:00:00
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0);
+
+    // End date: 15th of next month at 23:59:59
+    let nextMonth = month + 1;
+    let nextYear = year;
+    if (nextMonth > 12) {
+      nextMonth = 1;
+      nextYear = year + 1;
+    }
+    const endDate = new Date(nextYear, nextMonth - 1, 15, 23, 59, 59);
+
+    return { startDate, endDate };
+  };
+
+  // Notification States
+  const [notifications, setNotifications] = useState<Array<{ date: string; name: string; month: string }>>([]);
+  const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
+  const [isLoadingNotifs, setIsLoadingNotifs] = useState(false);
+  const [lastReadTime, setLastReadTime] = useState<number>(() => {
+    const val = localStorage.getItem('lastReadTime');
+    return val ? parseInt(val) : 0;
+  });
 
   interface RankingItem {
     msnv: string;
@@ -438,6 +550,7 @@ export default function App() {
     workDays: number | null;
     lateDays: number | null;
     forgotDays: number | null;
+    name?: string;
   }) => {
     if (!APPS_SCRIPT_URL) {
       console.warn("VITE_APPS_SCRIPT_URL is not set.");
@@ -457,6 +570,28 @@ export default function App() {
     return await res.json();
   };
 
+  const fetchNotifications = async () => {
+    if (!APPS_SCRIPT_URL) return;
+    setIsLoadingNotifs(true);
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=notifications`);
+      const data = await res.json();
+      if (data && data.notifications) {
+        setNotifications(data.notifications);
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    } finally {
+      setIsLoadingNotifs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const timer = setInterval(fetchNotifications, 20000);
+    return () => clearInterval(timer);
+  }, [APPS_SCRIPT_URL]);
+
   const fetchRankings = async () => {
     if (!rankingMonth) return;
     setIsLoadingRankings(true);
@@ -474,6 +609,37 @@ export default function App() {
   useEffect(() => {
     fetchRankings();
   }, [rankingMonth]);
+
+  // Filter and sort notifications based on active reportingMonth cycle & reset logic
+  const filteredNotifications = useMemo(() => {
+    const { startDate, endDate } = getCycleBounds(reportingMonth);
+    const now = new Date();
+
+    // Reset logic: clear notifications and reset count if past the 15th of next month (endDate)
+    if (now > endDate) {
+      return [];
+    }
+
+    const filtered = notifications.filter(notif => {
+      const notifDate = parseCustomDate(notif.date);
+      if (!notifDate) return false;
+      return notifDate >= startDate && notifDate <= endDate;
+    });
+
+    // Sort newest first
+    return filtered.sort((a, b) => {
+      const dateA = parseCustomDate(a.date)?.getTime() || 0;
+      const dateB = parseCustomDate(b.date)?.getTime() || 0;
+      return dateB - dateA;
+    });
+  }, [notifications, reportingMonth]);
+
+  const unreadCount = useMemo(() => {
+    return filteredNotifications.filter(notif => {
+      const notifTime = parseCustomDate(notif.date)?.getTime() || 0;
+      return notifTime > lastReadTime;
+    }).length;
+  }, [filteredNotifications, lastReadTime]);
 
   // Load current stats automatically from Sheet
   useEffect(() => {
@@ -600,6 +766,7 @@ export default function App() {
         workDays: currentStats.workDays,
         lateDays: currentStats.lateDays,
         forgotDays: currentStats.forgotDays,
+        name: employeeName,
       });
 
       if (data && (data.success || data.local)) {
@@ -610,6 +777,7 @@ export default function App() {
             : 'Đã lưu và cập nhật dữ liệu Google Sheets thành công!' 
         });
         fetchRankings();
+        fetchNotifications();
         setHasGeneratedReport(true);
       } else {
         setNotification({ type: 'error', message: 'Không thể cập nhật dữ liệu.' });
@@ -633,7 +801,27 @@ export default function App() {
   }, [notification]);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
+    const forceLightMode = () => {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+    };
+    
+    forceLightMode();
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', forceLightMode);
+    } else {
+      mediaQuery.addListener(forceLightMode);
+    }
+    
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', forceLightMode);
+      } else {
+        mediaQuery.removeListener(forceLightMode);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -866,12 +1054,33 @@ export default function App() {
     );
   };
 
+  const padNum = (num: number) => String(num).padStart(2, '0');
+  const formattedTime = `${padNum(currentTime.getHours())}:${padNum(currentTime.getMinutes())}:${padNum(currentTime.getSeconds())}`;
+  const getVietnameseWeekdayAndDate = (date: Date) => {
+    const weekdays = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+    const weekday = weekdays[date.getDay()];
+    return `${weekday}, ${padNum(date.getDate())}/${padNum(date.getMonth() + 1)}/${date.getFullYear()}`;
+  };
+  const formattedDate = getVietnameseWeekdayAndDate(currentTime);
+
   const navItems = [
     { id: 'Overview', icon: LayoutDashboard, label: 'Tổng quan' },
     { id: 'Analytics', icon: BarChart3, label: 'Phân tích' },
     { id: 'Reports', icon: FileText, label: 'Báo cáo' },
     { id: 'Settings', icon: Settings, label: 'Cài đặt' },
   ];
+
+  // Layered scroll calculations (iOS-like parallax and overlap)
+  let cardMarginTop = 24;
+  if (scrollY <= 80) {
+    cardMarginTop = 24 + 0.4 * scrollY;
+  } else if (scrollY <= 180) {
+    const progress = (scrollY - 80) / 100;
+    const gap = 24 - progress * 64; // goes from 24px to -40px
+    cardMarginTop = gap + 0.4 * scrollY;
+  } else {
+    cardMarginTop = 32;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 font-sans transition-colors duration-300">
@@ -899,9 +1108,168 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Top Header Banner Section */}
+      <div 
+        className="w-full fixed top-0 left-0 right-0 z-1 flex items-center px-6 sm:px-10 border-b border-slate-200/40 overflow-hidden shrink-0"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)), url(${topBanner})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          transform: `translateY(-${Math.min(scrollY * 0.6, 240)}px)`,
+          height: '240px',
+        }}
+      >
+        {/* Subtle overlay to ensure readability */}
+        <div className="absolute inset-0 bg-slate-950/5" />
+
+        {/* Premium iOS-style Notification Bell */}
+        <button
+          id="notif-bell-btn"
+          onClick={() => {
+            setIsNotifPanelOpen(!isNotifPanelOpen);
+            if (!isNotifPanelOpen) {
+              const nowTime = Date.now();
+              setLastReadTime(nowTime);
+              localStorage.setItem('lastReadTime', nowTime.toString());
+            }
+          }}
+          className="absolute right-[18px] top-[16px] z-50 flex items-center justify-center cursor-pointer bg-white/95 hover:bg-white active:scale-95 transition-all text-slate-800"
+          style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          }}
+        >
+          <Bell className="w-5 h-5 text-slate-800" />
+          {unreadCount > 0 && (
+            <span 
+              id="notif-unread-badge"
+              className="absolute -top-[4px] -right-[4px] flex items-center justify-center rounded-full text-white bg-[#FF3B30] font-bold"
+              style={{
+                minWidth: '18px',
+                height: '18px',
+                padding: '0 4px',
+                fontSize: '11px',
+                fontWeight: 700,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              {unreadCount}
+            </span>
+          )}
+        </button>
+        
+        <div className="max-w-6xl mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
+          <div className="absolute right-[6%] top-1/2 -translate-y-1/2 text-right z-10 select-none">
+            <div 
+              className="font-mono text-white leading-[1.1] font-bold select-none"
+              style={{ 
+                fontSize: '42px',
+                textShadow: '0 2px 8px rgba(0,0,0,0.12)' 
+              }}
+            >
+              {formattedTime}
+            </div>
+            <div 
+              className="font-sans font-normal mt-1 select-none"
+              style={{ 
+                fontSize: '16px',
+                color: 'rgba(255,255,255,0.95)',
+                textShadow: '0 2px 8px rgba(0,0,0,0.12)' 
+              }}
+            >
+              {formattedDate}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Notification Panel dropdown / slide-down modal */}
+      <AnimatePresence>
+        {isNotifPanelOpen && (
+          <>
+            <div 
+              id="notif-panel-backdrop"
+              className="fixed inset-0 z-40 bg-black/15 backdrop-blur-[1px]" 
+              onClick={() => setIsNotifPanelOpen(false)} 
+            />
+
+            <motion.div
+              id="notif-panel"
+              initial={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="fixed z-50 bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl max-h-[420px] overflow-y-auto
+                         w-[calc(100%-32px)] sm:w-[380px]"
+              style={{
+                top: isMobile ? '80px' : `${16 - Math.min(scrollY * 0.6, 240) + 48}px`,
+                right: isMobile ? '16px' : '18px',
+              }}
+            >
+              {/* Panel Title Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 shrink-0">
+                <span className="font-sans font-bold text-[16px] text-slate-800">
+                  Thông báo cập nhật
+                </span>
+                <button 
+                  onClick={() => setIsNotifPanelOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Notification Cards list */}
+              <div className="flex flex-col gap-3 overflow-y-auto max-h-[320px] pr-1">
+                {filteredNotifications.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                    Không có thông báo mới nào
+                  </div>
+                ) : (
+                  filteredNotifications.map((notif, idx) => (
+                    <div 
+                      key={idx}
+                      id={`notif-card-${idx}`}
+                      className="flex flex-col gap-1 transition-all hover:scale-[1.01]"
+                      style={{
+                        background: '#FFFBEA',
+                        border: '1px solid #FFE58F',
+                        borderRadius: '16px',
+                        padding: '14px',
+                        boxShadow: '0 0 18px rgba(255,214,10,0.22)',
+                      }}
+                    >
+                      <span className="text-slate-400 font-mono text-[11px]">
+                        {notif.date}
+                      </span>
+                      <span className="text-slate-800 font-sans font-semibold text-[13px] leading-snug">
+                        {notif.name} đã cập nhật báo cáo
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Spacer to push content down below the fixed top banner */}
+      <div style={{ height: '240px' }} />
+
       {/* Main Content */}
-      <main className="w-full max-w-full overflow-hidden flex flex-col">
-        <div className="px-6 pt-4 pb-6 space-y-6 flex-1 min-h-0 overflow-y-auto">
+      <main 
+        className="w-full max-w-full relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] border-t border-slate-200/50"
+        style={{
+          marginTop: `${cardMarginTop}px`,
+          transition: 'all 0.3s ease',
+        }}
+      >
+
+        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-6xl mx-auto">
           {/* PWA Install Prompt Card */}
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
@@ -1340,10 +1708,25 @@ export default function App() {
               </div>
             </div>
           </div>
+
         </div>
 
-        <footer className="px-8 py-6 text-center text-slate-400 dark:text-slate-600 text-xs">
-          <p className="font-medium tracking-wide">© 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.</p>
+        {/* Footer with Banner integrated at bottom */}
+        <footer className="w-full mt-auto relative select-none overflow-hidden shrink-0">
+          <div className="w-full relative h-[60px] sm:h-[80px] md:h-[100px] flex items-center justify-center">
+            <img 
+              src={bottomBanner} 
+              alt="IMEXPHARM bottom decorative banner" 
+              className="absolute inset-0 w-full h-full object-cover block"
+              referrerPolicy="no-referrer"
+            />
+            {/* Overlay holding the text directly on top of the banner */}
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center px-4">
+              <p className="font-extrabold tracking-widest uppercase text-white text-[9px] sm:text-xs text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] max-w-4xl">
+                © 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.
+              </p>
+            </div>
+          </div>
         </footer>
       </main>
 
