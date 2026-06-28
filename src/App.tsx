@@ -421,11 +421,16 @@ export default function App() {
     return `${month}/${year}`;
   };
 
-  // Cross-platform bulletproof custom date parsing (dd/mm/yyyy hh:mm:ss)
+  // Cross-platform bulletproof custom date parsing (dd/mm/yyyy hh:mm:ss or raw JS date)
   const parseCustomDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
     try {
       const cleanStr = dateStr.replace(/,/g, '').trim();
+      if (cleanStr.includes('GMT') || (isNaN(Number(cleanStr)) && !cleanStr.includes('/'))) {
+        const d = new Date(cleanStr);
+        if (!isNaN(d.getTime())) return d;
+      }
+
       const parts = cleanStr.split(/\s+/);
       if (parts.length < 1) return null;
 
@@ -452,6 +457,40 @@ export default function App() {
     } catch (err) {
       console.error("Error parsing date:", dateStr, err);
       return null;
+    }
+  };
+
+  // Helper to format any date string cleanly as "dd/mm/yyyy • hh:mm:ss"
+  const formatNotificationDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    try {
+      const cleanStr = dateStr.replace(/,/g, '').trim();
+      if (cleanStr.includes('GMT') || (isNaN(Number(cleanStr)) && !cleanStr.includes('/'))) {
+        const d = new Date(cleanStr);
+        if (!isNaN(d.getTime())) {
+          const pad = (num: number) => String(num).padStart(2, '0');
+          const day = pad(d.getDate());
+          const month = pad(d.getMonth() + 1);
+          const year = d.getFullYear();
+          const hours = pad(d.getHours());
+          const minutes = pad(d.getMinutes());
+          const seconds = pad(d.getSeconds());
+          return `${day}/${month}/${year} • ${hours}:${minutes}:${seconds}`;
+        }
+      }
+
+      const parts = cleanStr.split(/\s+/);
+      if (parts.length >= 2) {
+        const datePart = parts[0]; // e.g. "30/06/2026"
+        const timePart = parts[1]; // e.g. "14:21:16"
+        if (datePart.includes('/') && timePart.includes(':')) {
+          return `${datePart} • ${timePart}`;
+        }
+      }
+      return dateStr;
+    } catch (e) {
+      console.error("Error formatting notification date:", dateStr, e);
+      return dateStr;
     }
   };
 
@@ -508,7 +547,11 @@ export default function App() {
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
 
   // Direct Apps Script integration helpers
-  const APPS_SCRIPT_URL = (import.meta as any).env.VITE_APPS_SCRIPT_URL || '';
+  const APPS_SCRIPT_URL_RAW = (import.meta as any).env.VITE_APPS_SCRIPT_URL || '';
+  const APPS_SCRIPT_URL = typeof APPS_SCRIPT_URL_RAW === 'string' &&
+    (APPS_SCRIPT_URL_RAW.startsWith('http://') || APPS_SCRIPT_URL_RAW.startsWith('https://'))
+    ? APPS_SCRIPT_URL_RAW
+    : '';
 
   const apiGetEmployee = async (msnv: string) => {
     if (!APPS_SCRIPT_URL) {
@@ -1142,22 +1185,17 @@ export default function App() {
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           }}
         >
-          <Bell className="w-5 h-5 text-slate-800" />
+          <Bell className={`w-5 h-5 text-slate-800 ${unreadCount > 0 ? 'shake-animation' : ''}`} />
           {unreadCount > 0 && (
             <span 
-              id="notif-unread-badge"
-              className="absolute -top-[4px] -right-[4px] flex items-center justify-center rounded-full text-white bg-[#FF3B30] font-bold"
+              id="notif-unread-red-dot"
+              className="absolute top-[10px] right-[10px] rounded-full bg-[#FF3B30]"
               style={{
-                minWidth: '18px',
-                height: '18px',
-                padding: '0 4px',
-                fontSize: '11px',
-                fontWeight: 700,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                width: '10px',
+                height: '10px',
+                boxShadow: '0 0 8px 2px rgba(255, 59, 48, 0.8)',
               }}
-            >
-              {unreadCount}
-            </span>
+            />
           )}
         </button>
         
@@ -1233,21 +1271,25 @@ export default function App() {
                     <div 
                       key={idx}
                       id={`notif-card-${idx}`}
-                      className="flex flex-col gap-1 transition-all hover:scale-[1.01]"
+                      className="flex flex-col gap-1 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                       style={{
-                        background: '#FFFBEA',
+                        background: 'linear-gradient(135deg, #FFFDF5, #FFFBEA)',
                         border: '1px solid #FFE58F',
-                        borderRadius: '16px',
+                        borderRadius: '20px',
                         padding: '14px',
-                        boxShadow: '0 0 18px rgba(255,214,10,0.22)',
+                        boxShadow: '0 4px 18px rgba(255, 214, 10, 0.15)',
                       }}
                     >
-                      <span className="text-slate-400 font-mono text-[11px]">
-                        {notif.date}
-                      </span>
-                      <span className="text-slate-800 font-sans font-semibold text-[13px] leading-snug">
-                        {notif.name} đã cập nhật báo cáo
-                      </span>
+                      <div className="flex items-center gap-1.5 text-amber-600/80 font-mono text-[11px] font-medium">
+                        <span>🕒</span>
+                        <span>{formatNotificationDate(notif.date)}</span>
+                      </div>
+                      <div className="text-slate-900 font-sans font-bold text-[14px]">
+                        {notif.name}
+                      </div>
+                      <div className="text-slate-600 font-sans text-[12px]">
+                        đã cập nhật báo cáo tháng
+                      </div>
                     </div>
                   ))
                 )}
