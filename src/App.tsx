@@ -1802,36 +1802,11 @@ export default function App() {
         {/* Footer with Banner integrated at bottom */}
         <footer 
           id="app-footer-banner"
-          className="w-full mt-auto relative select-none overflow-hidden shrink-0"
+          className="app-bottom-banner"
           style={{
             backgroundImage: `url(${bottomBanner})`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center bottom',
-            backgroundSize: 'contain',
-            height: isMobile ? '120px' : '220px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            borderRadius: '0',
-            boxShadow: 'none',
-            padding: '0',
-            margin: '0',
           }}
-        >
-          {/* Footer text overlay */}
-          <div 
-            id="app-footer-text-overlay"
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center px-4 w-full"
-            style={{
-              fontSize: '12px',
-              color: 'white',
-              fontWeight: 600,
-              textShadow: '0 2px 6px rgba(0,0,0,0.35)',
-              transform: 'translateX(-50%)',
-            }}
-          >
-            © 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.
-          </div>
-        </footer>
+        />
       </main>
 
       {/* Off-screen Export Containers */}
