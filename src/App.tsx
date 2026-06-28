@@ -565,7 +565,7 @@ export default function App() {
   const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
   const [isLoadingNotifs, setIsLoadingNotifs] = useState(false);
   const [lastReadTime, setLastReadTime] = useState<number>(() => {
-    const val = localStorage.getItem('lastReadTime');
+    const val = localStorage.getItem('notification_last_read_time') || localStorage.getItem('lastReadTime');
     return val ? parseInt(val) : 0;
   });
 
@@ -1200,11 +1200,21 @@ export default function App() {
         <button
           id="notif-bell-btn"
           onClick={() => {
-            setIsNotifPanelOpen(!isNotifPanelOpen);
-            if (!isNotifPanelOpen) {
-              const nowTime = Date.now();
-              setLastReadTime(nowTime);
-              localStorage.setItem('lastReadTime', nowTime.toString());
+            const nextOpenState = !isNotifPanelOpen;
+            setIsNotifPanelOpen(nextOpenState);
+            if (nextOpenState) {
+              // mark all current notifications as read by saving the latest notification timestamp
+              let maxTime = 0;
+              filteredNotifications.forEach(notif => {
+                const notifTime = parseCustomDate(notif.date)?.getTime() || 0;
+                if (notifTime > maxTime) {
+                  maxTime = notifTime;
+                }
+              });
+              const finalTime = maxTime || Date.now();
+              setLastReadTime(finalTime);
+              localStorage.setItem('notification_last_read_time', finalTime.toString());
+              localStorage.setItem('lastReadTime', finalTime.toString()); // Keep legacy fallback sync
             }
           }}
           className="absolute right-[18px] top-[16px] z-50 flex items-center justify-center cursor-pointer bg-white/95 hover:bg-white active:scale-95 transition-all text-slate-800"
@@ -1790,20 +1800,36 @@ export default function App() {
         </div>
 
         {/* Footer with Banner integrated at bottom */}
-        <footer className="w-full mt-auto relative select-none overflow-hidden shrink-0">
-          <div className="w-full relative h-[60px] sm:h-[80px] md:h-[100px] flex items-center justify-center">
-            <img 
-              src={bottomBanner} 
-              alt="IMEXPHARM bottom decorative banner" 
-              className="absolute inset-0 w-full h-full object-cover block"
-              referrerPolicy="no-referrer"
-            />
-            {/* Overlay holding the text directly on top of the banner */}
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center px-4">
-              <p className="font-extrabold tracking-widest uppercase text-white text-[9px] sm:text-xs text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] max-w-4xl">
-                © 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.
-              </p>
-            </div>
+        <footer 
+          id="app-footer-banner"
+          className="w-full mt-auto relative select-none overflow-hidden shrink-0"
+          style={{
+            backgroundImage: `url(${bottomBanner})`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center bottom',
+            backgroundSize: 'contain',
+            height: isMobile ? '120px' : '220px',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderRadius: '0',
+            boxShadow: 'none',
+            padding: '0',
+            margin: '0',
+          }}
+        >
+          {/* Footer text overlay */}
+          <div 
+            id="app-footer-text-overlay"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center px-4 w-full"
+            style={{
+              fontSize: '12px',
+              color: 'white',
+              fontWeight: 600,
+              textShadow: '0 2px 6px rgba(0,0,0,0.35)',
+              transform: 'translateX(-50%)',
+            }}
+          >
+            © 2026 WORKTRACK PLATFORM. FUTURISTIC PERFORMANCE ANALYTICS.
           </div>
         </footer>
       </main>
