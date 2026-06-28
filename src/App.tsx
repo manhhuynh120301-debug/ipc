@@ -360,6 +360,8 @@ export default function App() {
 
   const [prevStats, setPrevStats] = useState<MonthlyStats | null>(null);
 
+  const [hasGeneratedReport, setHasGeneratedReport] = useState(false);
+
   const [googleSheetsConnected, setGoogleSheetsConnected] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -608,6 +610,7 @@ export default function App() {
             : 'Đã lưu và cập nhật dữ liệu Google Sheets thành công!' 
         });
         fetchRankings();
+        setHasGeneratedReport(true);
       } else {
         setNotification({ type: 'error', message: 'Không thể cập nhật dữ liệu.' });
       }
@@ -1172,81 +1175,85 @@ export default function App() {
             </motion.button>
           </div>
 
-          {/* This container will be exported as the actual Report PNG */}
-          <div ref={dashboardRef} className="max-w-4xl mx-auto space-y-4 bg-slate-50/40 dark:bg-slate-950 p-6 sm:p-10 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-slate-800">
-            {/* REPORT HEADER */}
-            <header className="px-2 pt-0 pb-6 border-b border-slate-200/60 dark:border-slate-800/60">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight uppercase">BÁO CÁO THÁNG - IPC</h1>
-              <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-wide">
-                {employeeName || 'Người dùng'}
-              </p>
-            </header>
+          {hasGeneratedReport && (
+            <>
+              {/* This container will be exported as the actual Report PNG */}
+              <div ref={dashboardRef} className="max-w-4xl mx-auto space-y-4 bg-slate-50/40 dark:bg-slate-950 p-6 sm:p-10 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-slate-800">
+                {/* REPORT HEADER */}
+                <header className="px-2 pt-0 pb-6 border-b border-slate-200/60 dark:border-slate-800/60">
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight uppercase">BÁO CÁO THÁNG - IPC</h1>
+                  <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-wide">
+                    {employeeName || 'Người dùng'}
+                  </p>
+                </header>
 
-            {/* KPI Section */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <StatCard 
-              title="Số mẫu phân tích"
-              value={currentStats.samples}
-              prevValue={prevStats?.samples}
-              icon={CheckCircle2}
-              colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
-              glowColor="bg-blue-500"
-              unit="mẫu"
-              usePercentage
-              rotation="rotate-[-8deg]"
-            />
-            <StatCard 
-              title="Số ngày làm"
-              value={currentStats.workDays}
-              prevValue={prevStats?.workDays}
-              icon={Briefcase}
-              colorClass="bg-gradient-to-br from-emerald-400 to-emerald-600"
-              glowColor="bg-emerald-500"
-              unit="ngày"
-              rotation="rotate-[8deg]"
-            />
-            <StatCard 
-              title="Số ngày đi trễ"
-              value={currentStats.lateDays}
-              prevValue={prevStats?.lateDays}
-              icon={Clock}
-              colorClass="bg-gradient-to-br from-orange-400 to-orange-600"
-              glowColor="bg-orange-500"
-              unit="ngày"
-              isInverse
-              rotation="rotate-[-8deg]"
-            />
-            <StatCard 
-              title="Số ngày quên chấm"
-              value={currentStats.forgotDays}
-              prevValue={prevStats?.forgotDays}
-              icon={AlertCircle}
-              colorClass="bg-gradient-to-br from-rose-500 to-rose-700"
-              glowColor="bg-rose-500"
-              unit="ngày"
-              isInverse
-              rotation="rotate-[8deg]"
-            />
-          </section>
-          </div>
+                {/* KPI Section */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <StatCard 
+                    title="Số mẫu phân tích"
+                    value={currentStats.samples}
+                    prevValue={prevStats?.samples}
+                    icon={CheckCircle2}
+                    colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
+                    glowColor="bg-blue-500"
+                    unit="mẫu"
+                    usePercentage
+                    rotation="rotate-[-8deg]"
+                  />
+                  <StatCard 
+                    title="Số ngày làm"
+                    value={currentStats.workDays}
+                    prevValue={prevStats?.workDays}
+                    icon={Briefcase}
+                    colorClass="bg-gradient-to-br from-emerald-400 to-emerald-600"
+                    glowColor="bg-emerald-500"
+                    unit="ngày"
+                    rotation="rotate-[8deg]"
+                  />
+                  <StatCard 
+                    title="Số ngày đi trễ"
+                    value={currentStats.lateDays}
+                    prevValue={prevStats?.lateDays}
+                    icon={Clock}
+                    colorClass="bg-gradient-to-br from-orange-400 to-orange-600"
+                    glowColor="bg-orange-500"
+                    unit="ngày"
+                    isInverse
+                    rotation="rotate-[-8deg]"
+                  />
+                  <StatCard 
+                    title="Số ngày quên chấm"
+                    value={currentStats.forgotDays}
+                    prevValue={prevStats?.forgotDays}
+                    icon={AlertCircle}
+                    colorClass="bg-gradient-to-br from-rose-500 to-rose-700"
+                    glowColor="bg-rose-500"
+                    unit="ngày"
+                    isInverse
+                    rotation="rotate-[8deg]"
+                  />
+                </section>
+              </div>
 
-          {/* Export Report Button */}
-          <div className="max-w-4xl mx-auto flex justify-center py-4">
-            <motion.button
-              whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(99, 102, 241, 0.4)" }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleExportReport}
-              disabled={isExporting}
-              className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isExporting ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Share2 className="w-4 h-4" />
-              )}
-              {isExporting ? 'ĐANG XUẤT...' : 'XUẤT BÁO CÁO'}
-            </motion.button>
-          </div>
+              {/* Export Report Button */}
+              <div className="max-w-4xl mx-auto flex justify-center py-4">
+                <motion.button
+                  whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(99, 102, 241, 0.4)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleExportReport}
+                  disabled={isExporting}
+                  className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {isExporting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Share2 className="w-4 h-4" />
+                  )}
+                  {isExporting ? 'ĐANG XUẤT...' : 'XUẤT BÁO CÁO'}
+                </motion.button>
+              </div>
+            </>
+          )}
 
           {/* THỐNG KÊ IPC */}
           <div className="max-w-4xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-3 py-5 sm:p-8 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
