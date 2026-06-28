@@ -524,6 +524,42 @@ export default function App() {
     return { startDate, endDate };
   };
 
+  // Calculate Start and End Date for current cycle (REAL current date only)
+  // Each cycle starts day 1 of current month, ends day 15 of next month.
+  // If today is <= 15, cycle starts day 1 of previous month and ends day 15 of current month.
+  // If today is >= 16, cycle starts day 1 of current month and ends day 15 of next month.
+  const getCurrentCycleBounds = () => {
+    const now = new Date();
+    const date = now.getDate();
+    const month = now.getMonth(); // 0-indexed
+    const year = now.getFullYear();
+
+    let startYear = year;
+    let startMonth = month;
+
+    if (date <= 15) {
+      startMonth = month - 1;
+      if (startMonth < 0) {
+        startMonth = 11;
+        startYear = year - 1;
+      }
+    } else {
+      startMonth = month;
+    }
+
+    const startDate = new Date(startYear, startMonth, 1, 0, 0, 0);
+
+    let endMonth = startMonth + 1;
+    let endYear = startYear;
+    if (endMonth > 11) {
+      endMonth = 0;
+      endYear = startYear + 1;
+    }
+    const endDate = new Date(endYear, endMonth, 15, 23, 59, 59);
+
+    return { startDate, endDate };
+  };
+
   // Notification States
   const [notifications, setNotifications] = useState<Array<{ date: string; name: string; month: string }>>([]);
   const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
@@ -653,15 +689,9 @@ export default function App() {
     fetchRankings();
   }, [rankingMonth]);
 
-  // Filter and sort notifications based on active reportingMonth cycle & reset logic
+  // Filter and sort notifications based on the current month's cycle (REAL current date only)
   const filteredNotifications = useMemo(() => {
-    const { startDate, endDate } = getCycleBounds(reportingMonth);
-    const now = new Date();
-
-    // Reset logic: clear notifications and reset count if past the 15th of next month (endDate)
-    if (now > endDate) {
-      return [];
-    }
+    const { startDate, endDate } = getCurrentCycleBounds();
 
     const filtered = notifications.filter(notif => {
       const notifDate = parseCustomDate(notif.date);
@@ -675,7 +705,7 @@ export default function App() {
       const dateB = parseCustomDate(b.date)?.getTime() || 0;
       return dateB - dateA;
     });
-  }, [notifications, reportingMonth]);
+  }, [notifications]);
 
   const unreadCount = useMemo(() => {
     return filteredNotifications.filter(notif => {
@@ -1185,8 +1215,8 @@ export default function App() {
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           }}
         >
-          <Bell className={`w-5 h-5 text-slate-800 ${unreadCount > 0 ? 'shake-animation' : ''}`} />
-          {unreadCount > 0 && (
+          <Bell className={`w-5 h-5 text-slate-800 ${(unreadCount > 0 && !isNotifPanelOpen) ? 'shake-animation' : ''}`} />
+          {unreadCount > 0 && !isNotifPanelOpen && (
             <span 
               id="notif-unread-red-dot"
               className="absolute top-[11px] right-[11px] rounded-full bg-[#FF3B30]"
@@ -1273,7 +1303,7 @@ export default function App() {
                     <div 
                       key={idx}
                       id={`notif-card-${idx}`}
-                      className="flex flex-col gap-2 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
+                      className="flex flex-col gap-1 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
                       style={{
                         background: '#ffffff',
                         border: '1px solid #f1f5f9',
@@ -1283,16 +1313,16 @@ export default function App() {
                       }}
                     >
                       <div 
-                        className="font-mono text-amber-500"
+                        className="font-mono"
                         style={{
-                          fontSize: '13px',
+                          fontSize: '12px',
                           fontWeight: 600,
-                          color: '#f59e0b'
+                          color: '#3B82F6',
                         }}
                       >
                         {formatNotificationDate(notif.date)}
                       </div>
-                      <div className="font-sans text-[15px] leading-snug">
+                      <div className="font-sans leading-snug" style={{ fontSize: '14px' }}>
                         <span style={{ fontWeight: 700, color: '#1e293b' }}>{notif.name}</span>
                         <span style={{ fontWeight: 500, color: '#475569' }}> đã cập nhật báo cáo</span>
                       </div>
