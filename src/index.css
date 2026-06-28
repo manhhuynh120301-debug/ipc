@@ -33,3 +33,45 @@
   transform-origin: top center;
 }
 
+/* Responsive bottom banner rules */
+.app-bottom-banner {
+  width: 100%;
+  min-height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: 100% auto; /* Mobile default */
+  height: 120px; /* Mobile default */
+  background-color: transparent;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+@media (min-width: 640px) {
+  .app-bottom-banner {
+    height: 220px;
+    background-size: 90% auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-bottom-banner {
+    height: 280px;
+    background-size: 80% auto;
+  }
+}
+
+@media (min-width: 1440px) {
+  .app-bottom-banner {
+    height: 280px;
+    background-size: 70% auto;
+  }
+}
+
+
