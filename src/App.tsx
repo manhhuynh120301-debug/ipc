@@ -41,6 +41,10 @@ import { twMerge } from 'tailwind-merge';
 // @ts-ignore
 import topBanner from './assets/banner-top.png';
 // @ts-ignore
+import topBanner2 from './assets/images/banner_top2_1782658687104.jpg';
+// @ts-ignore
+import topBanner3 from './assets/images/banner_top3_1782658701996.jpg';
+// @ts-ignore
 import bottomBanner from './assets/banner-bottom.webp';
 
 /** Utility for tailwind classes */
@@ -356,6 +360,44 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [scrollY, setScrollY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Top banner carousel states
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const banners = [
+    '/assets/banner-top.png',
+    '/assets/banner-top2.png',
+    '/assets/banner-top3.png'
+  ];
+  const bannerImages = [topBanner, topBanner2, topBanner3];
+
+  const [bannerHeight, setBannerHeight] = useState(260);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      const w = window.innerWidth;
+      if (w >= 1920) {
+        setBannerHeight(300);
+      } else if (w >= 1024) {
+        setBannerHeight(260);
+      } else if (w >= 768) {
+        setBannerHeight(220);
+      } else if (w >= 480) {
+        setBannerHeight(180);
+      } else {
+        setBannerHeight(160);
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  useEffect(() => {
+    const bannerTimer = setInterval(() => {
+      setCurrentBannerIndex((prevIndex) => (prevIndex + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(bannerTimer);
+  }, [banners.length]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -1185,16 +1227,32 @@ export default function App() {
       <div 
         className="w-full fixed top-0 left-0 right-0 z-1 flex items-center px-6 sm:px-10 border-b border-slate-200/40 overflow-hidden shrink-0"
         style={{
-          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)), url(${topBanner})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          transform: `translateY(-${Math.min(scrollY * 0.6, 240)}px)`,
-          height: '240px',
+          transform: `translateY(-${Math.min(scrollY * 0.6, bannerHeight)}px)`,
+          height: `${bannerHeight}px`,
         }}
       >
-        {/* Subtle overlay to ensure readability */}
-        <div className="absolute inset-0 bg-slate-950/5" />
+        {/* Carousel Sliding Track */}
+        <div 
+          className="absolute inset-0 flex z-0"
+          style={{
+            width: '300%',
+            transform: `translateX(-${(currentBannerIndex * 100) / 3}%)`,
+            transition: 'transform 0.9s ease-in-out',
+          }}
+        >
+          {bannerImages.map((src, idx) => (
+            <div key={idx} className="w-1/3 h-full flex-shrink-0 relative">
+              <img 
+                src={src} 
+                alt={`Banner slide ${idx + 1}`}
+                className="w-full h-full object-cover object-center block"
+                referrerPolicy="no-referrer"
+              />
+              {/* Subtle overlay to ensure readability */}
+              <div className="absolute inset-0 bg-slate-950/10" />
+            </div>
+          ))}
+        </div>
 
         {/* Premium iOS-style Notification Bell */}
         <button
@@ -1284,7 +1342,7 @@ export default function App() {
                          w-[calc(100%-32px)] sm:w-[380px]"
               style={{
                 borderRadius: '24px',
-                top: isMobile ? '80px' : `${16 - Math.min(scrollY * 0.6, 240) + 48}px`,
+                top: isMobile ? '80px' : `${16 - Math.min(scrollY * 0.6, bannerHeight) + 48}px`,
                 right: isMobile ? '16px' : '18px',
                 boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
               }}
@@ -1346,7 +1404,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Spacer to push content down below the fixed top banner */}
-      <div style={{ height: '240px' }} />
+      <div style={{ height: `${bannerHeight}px` }} />
 
       {/* Main Content */}
       <main 
