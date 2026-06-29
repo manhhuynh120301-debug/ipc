@@ -1391,7 +1391,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-[#f8fafc] dark:bg-slate-950 font-sans transition-colors duration-300 relative">
+    <div className="min-h-[100dvh] bg-[#f8fafc] dark:bg-slate-950 font-sans transition-colors duration-300">
       {/* Toast Notification Container */}
       <AnimatePresence>
         {notification && (
@@ -1418,7 +1418,7 @@ export default function App() {
 
       {/* Top Header Banner Section */}
       <div 
-        className="fixed top-0 left-0 right-0 z-1 flex items-center px-6 sm:px-10 border-b border-slate-200/40 overflow-hidden shrink-0"
+        className="w-full fixed top-0 left-0 right-0 z-1 flex items-center px-6 sm:px-10 border-b border-slate-200/40 overflow-hidden shrink-0"
         style={{
           transform: `translateY(-${Math.min(scrollY * 0.6, bannerHeight)}px)`,
           height: `${bannerHeight}px`,
@@ -2308,3 +2308,4 @@ export default function App() {
     </div>
   );
 }
+
