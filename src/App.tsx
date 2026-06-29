@@ -696,9 +696,7 @@ export default function App() {
       };
     }
   };
-    return await res.json();
-  };
-
+    
   const fetchNotifications = async () => {
     if (!APPS_SCRIPT_URL) return;
     setIsLoadingNotifs(true);
@@ -899,16 +897,18 @@ export default function App() {
             ? 'Cập nhật thành công (Chế độ Offline).' 
             : 'Đã lưu và cập nhật dữ liệu Google Sheets thành công!' 
         });
+      
         fetchRankings();
         fetchNotifications();
         setHasGeneratedReport(true);
-        else {
-          console.error("SAVE ERROR:", data);
-          setNotification({ 
-            type: 'error', 
-            message: data?.error || 'Không thể cập nhật dữ liệu.'
-          });
-        }
+      
+      } else {
+        console.error("SAVE ERROR:", data);
+        setNotification({ 
+          type: 'error', 
+          message: data?.error || 'Không thể cập nhật dữ liệu.'
+        });
+      }
     } catch (err) {
       console.error('Error saving report:', err);
       setNotification({ type: 'error', message: 'Lỗi kết nối khi lưu dữ liệu.' });
