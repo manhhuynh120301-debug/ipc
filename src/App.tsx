@@ -369,21 +369,21 @@ export default function App() {
   ];
   const bannerImages = [topBanner, topBanner2, topBanner3];
 
-  const [bannerHeight, setBannerHeight] = useState(260);
+  const [bannerHeight, setBannerHeight] = useState(320);
 
   useEffect(() => {
     const updateHeight = () => {
       const w = window.innerWidth;
       if (w >= 1920) {
-        setBannerHeight(300);
+        setBannerHeight(420);
       } else if (w >= 1024) {
-        setBannerHeight(260);
+        setBannerHeight(380);
       } else if (w >= 768) {
-        setBannerHeight(220);
+        setBannerHeight(280);
       } else if (w >= 480) {
-        setBannerHeight(180);
+        setBannerHeight(220);
       } else {
-        setBannerHeight(160);
+        setBannerHeight(180);
       }
     };
     updateHeight();
