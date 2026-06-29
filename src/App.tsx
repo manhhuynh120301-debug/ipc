@@ -631,36 +631,131 @@ export default function App() {
     ? APPS_SCRIPT_URL_RAW
     : '';
 
-  const apiGetEmployee = async (msnv: string) => {
-    if (!APPS_SCRIPT_URL) {
-      console.warn("VITE_APPS_SCRIPT_URL is not set.");
-      return { found: false, error: "Vui lòng cấu hình VITE_APPS_SCRIPT_URL" };
+  const [showInstructions, setShowInstructions] = useState(false);
+
+  const initLocalDB = () => {
+    if (!localStorage.getItem('local_employees')) {
+      localStorage.setItem('local_employees', JSON.stringify([
+        { msnv: 'IPC001', name: 'Nguyễn Văn An' },
+        { msnv: 'IPC002', name: 'Trần Thị Bình' },
+        { msnv: 'IPC003', name: 'Lê Hoàng Giang' },
+        { msnv: 'IPC004', name: 'Phạm Minh Đức' },
+        { msnv: 'IPC005', name: 'Vũ Hồng Hạnh' }
+      ]));
     }
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=employee&msnv=${encodeURIComponent(msnv)}`);
-    return await res.json();
+    if (!localStorage.getItem('local_reports')) {
+      localStorage.setItem('local_reports', JSON.stringify([
+        { msnv: 'IPC001', month: '06/2026', samples: 45, workDays: 22, lateDays: 1, forgotDays: 0 },
+        { msnv: 'IPC001', month: '07/2026', samples: 48, workDays: 24, lateDays: 0, forgotDays: 1 },
+        { msnv: 'IPC002', month: '06/2026', samples: 50, workDays: 21, lateDays: 2, forgotDays: 0 },
+        { msnv: 'IPC003', month: '06/2026', samples: 40, workDays: 23, lateDays: 0, forgotDays: 2 },
+        { msnv: 'IPC004', month: '06/2026', samples: 38, workDays: 20, lateDays: 3, forgotDays: 1 },
+        { msnv: 'IPC005', month: '06/2026', samples: 42, workDays: 22, lateDays: 1, forgotDays: 0 }
+      ]));
+    }
+    if (!localStorage.getItem('local_notifications')) {
+      localStorage.setItem('local_notifications', JSON.stringify([
+        { date: '28/06/2026 19:15:00', name: 'Trần Thị Bình', month: '06/2026' },
+        { date: '28/06/2026 17:30:00', name: 'Nguyễn Văn An', month: '06/2026' },
+        { date: '27/06/2026 11:20:00', name: 'Vũ Hồng Hạnh', month: '06/2026' }
+      ]));
+    }
+  };
+
+  useEffect(() => {
+    initLocalDB();
+  }, []);
+
+  const apiGetEmployee = async (msnv: string) => {
+    const cleanMsnv = msnv.trim().toUpperCase();
+    if (!APPS_SCRIPT_URL) {
+      initLocalDB();
+      const emps = JSON.parse(localStorage.getItem('local_employees') || '[]');
+      const found = emps.find((e: any) => e.msnv === cleanMsnv);
+      if (found) {
+        return { found: true, name: found.name };
+      }
+      const autoName = `Nhân viên ${cleanMsnv}`;
+      const updated = [...emps, { msnv: cleanMsnv, name: autoName }];
+      localStorage.setItem('local_employees', JSON.stringify(updated));
+      return { found: true, name: autoName };
+    }
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=employee&msnv=${encodeURIComponent(msnv)}`);
+      return await res.json();
+    } catch (err) {
+      console.error("Remote lookup failed, fallback to local:", err);
+      initLocalDB();
+      const emps = JSON.parse(localStorage.getItem('local_employees') || '[]');
+      const found = emps.find((e: any) => e.msnv === cleanMsnv);
+      return { found: true, name: found ? found.name : `Nhân viên ${cleanMsnv}` };
+    }
   };
 
   const apiGetReport = async (msnv: string, month: string) => {
+    const cleanMsnv = msnv.trim().toUpperCase();
     if (!APPS_SCRIPT_URL) {
-      console.warn("VITE_APPS_SCRIPT_URL is not set.");
-      return { found: false, error: "Vui lòng cấu hình VITE_APPS_SCRIPT_URL" };
+      initLocalDB();
+      const reports = JSON.parse(localStorage.getItem('local_reports') || '[]');
+      const found = reports.find((r: any) => r.msnv === cleanMsnv && r.month === month);
+      if (found) {
+        return { found: true, ...found };
+      }
+      return { found: false };
     }
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=report&msnv=${encodeURIComponent(msnv)}&month=${encodeURIComponent(month)}`);
-    return await res.json();
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=report&msnv=${encodeURIComponent(msnv)}&month=${encodeURIComponent(month)}`);
+      return await res.json();
+    } catch (err) {
+      console.error("Remote report failed, fallback to local:", err);
+      initLocalDB();
+      const reports = JSON.parse(localStorage.getItem('local_reports') || '[]');
+      const found = reports.find((r: any) => r.msnv === cleanMsnv && r.month === month);
+      return found ? { found: true, ...found } : { found: false };
+    }
   };
 
   const apiGetRankings = async (month: string) => {
     if (!APPS_SCRIPT_URL) {
-      console.warn("VITE_APPS_SCRIPT_URL is not set.");
-      return [];
+      initLocalDB();
+      const emps = JSON.parse(localStorage.getItem('local_employees') || '[]');
+      const empsMap = emps.reduce((acc: any, cur: any) => {
+        acc[cur.msnv] = cur.name;
+        return acc;
+      }, {});
+      const reports = JSON.parse(localStorage.getItem('local_reports') || '[]');
+      const filtered = reports.filter((r: any) => r.month === month);
+      return filtered.map((r: any) => ({
+        msnv: r.msnv,
+        name: empsMap[r.msnv] || `Nhân viên ${r.msnv}`,
+        samples: r.samples || 0,
+        workDays: r.workDays || 0,
+        lateDays: r.lateDays || 0,
+        forgotDays: r.forgotDays || 0
+      }));
     }
     try {
       const res = await fetch(`${APPS_SCRIPT_URL}?action=ranking&month=${encodeURIComponent(month)}`);
       const data = await res.json();
       return data.rankings || [];
     } catch (err) {
-      console.error("Error loading rankings:", err);
-      return [];
+      console.error("Remote ranking failed, fallback to local:", err);
+      initLocalDB();
+      const emps = JSON.parse(localStorage.getItem('local_employees') || '[]');
+      const empsMap = emps.reduce((acc: any, cur: any) => {
+        acc[cur.msnv] = cur.name;
+        return acc;
+      }, {});
+      const reports = JSON.parse(localStorage.getItem('local_reports') || '[]');
+      const filtered = reports.filter((r: any) => r.month === month);
+      return filtered.map((r: any) => ({
+        msnv: r.msnv,
+        name: empsMap[r.msnv] || `Nhân viên ${r.msnv}`,
+        samples: r.samples || 0,
+        workDays: r.workDays || 0,
+        lateDays: r.lateDays || 0,
+        forgotDays: r.forgotDays || 0
+      }));
     }
   };
 
@@ -674,34 +769,110 @@ export default function App() {
     name?: string;
   }) => {
     if (!APPS_SCRIPT_URL) {
-      console.warn("VITE_APPS_SCRIPT_URL is not set.");
-      return { success: false, error: "Vui lòng cấu hình VITE_APPS_SCRIPT_URL" };
+      initLocalDB();
+      const cleanMsnv = payload.msnv.trim().toUpperCase();
+      const reports = JSON.parse(localStorage.getItem('local_reports') || '[]');
+      const existingIdx = reports.findIndex((r: any) => r.msnv === cleanMsnv && r.month === payload.month);
+      const reportData = {
+        msnv: cleanMsnv,
+        month: payload.month,
+        samples: payload.samples,
+        workDays: payload.workDays,
+        lateDays: payload.lateDays,
+        forgotDays: payload.forgotDays
+      };
+      if (existingIdx !== -1) {
+        reports[existingIdx] = reportData;
+      } else {
+        reports.push(reportData);
+      }
+      localStorage.setItem('local_reports', JSON.stringify(reports));
+
+      const notifs = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+      const pad = (num: number) => String(num).padStart(2, '0');
+      const now = new Date();
+      const dateString = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      notifs.push({
+        date: dateString,
+        name: payload.name || `Nhân viên ${cleanMsnv}`,
+        month: payload.month
+      });
+      localStorage.setItem('local_notifications', JSON.stringify(notifs));
+
+      return { success: true, local: true };
     }
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-      body: JSON.stringify({
-        action: 'saveReport',
-        ...payload
-      }),
-    });
-    return await res.json();
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+        body: JSON.stringify({
+          action: 'saveReport',
+          ...payload
+        }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error("Remote save failed, fallback to local:", err);
+      initLocalDB();
+      const cleanMsnv = payload.msnv.trim().toUpperCase();
+      const reports = JSON.parse(localStorage.getItem('local_reports') || '[]');
+      const existingIdx = reports.findIndex((r: any) => r.msnv === cleanMsnv && r.month === payload.month);
+      const reportData = {
+        msnv: cleanMsnv,
+        month: payload.month,
+        samples: payload.samples,
+        workDays: payload.workDays,
+        lateDays: payload.lateDays,
+        forgotDays: payload.forgotDays
+      };
+      if (existingIdx !== -1) {
+        reports[existingIdx] = reportData;
+      } else {
+        reports.push(reportData);
+      }
+      localStorage.setItem('local_reports', JSON.stringify(reports));
+
+      const notifs = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+      const pad = (num: number) => String(num).padStart(2, '0');
+      const now = new Date();
+      const dateString = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      notifs.push({
+        date: dateString,
+        name: payload.name || `Nhân viên ${cleanMsnv}`,
+        month: payload.month
+      });
+      localStorage.setItem('local_notifications', JSON.stringify(notifs));
+
+      return { success: true, local: true };
+    }
   };
 
   const fetchNotifications = async () => {
-    if (!APPS_SCRIPT_URL) return;
+    if (!APPS_SCRIPT_URL) {
+      initLocalDB();
+      const notifs = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+      setNotifications(notifs);
+      return;
+    }
     setIsLoadingNotifs(true);
     try {
       const res = await fetch(`${APPS_SCRIPT_URL}?action=notifications`);
       const data = await res.json();
       if (data && data.notifications) {
         setNotifications(data.notifications);
+      } else {
+        initLocalDB();
+        const notifs = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+        setNotifications(notifs);
       }
     } catch (err) {
-      console.error("Error fetching notifications:", err);
+      console.error("Error fetching notifications, fallback to local:", err);
+      initLocalDB();
+      const notifs = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+      setNotifications(notifs);
     } finally {
       setIsLoadingNotifs(false);
     }
@@ -1466,9 +1637,9 @@ export default function App() {
           <motion.section 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-6xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
+            className="max-w-6xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl">
                   <Settings className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -1479,14 +1650,81 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {googleSheetsConnected && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-[8px] font-semibold uppercase tracking-normal">
-                    <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                    Connected
+                {googleSheetsConnected ? (
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-[10px] font-bold uppercase tracking-normal">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Đã kết nối Google Sheets
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-xl text-[10px] font-bold uppercase tracking-normal">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Chế độ Ngoại tuyến (Local Demo)
+                    </div>
+                    <button 
+                      onClick={() => setShowInstructions(!showInstructions)}
+                      className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition-all bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-xl cursor-pointer"
+                    >
+                      {showInstructions ? 'Ẩn hướng dẫn' : 'Cách kết nối Google Sheets ↗'}
+                    </button>
                   </div>
                 )}
               </div>
             </div>
+
+            <AnimatePresence>
+              {showInstructions && !googleSheetsConnected && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden mb-6"
+                >
+                  <div className="bg-indigo-50/50 dark:bg-indigo-950/15 p-4 sm:p-5 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 text-slate-700 dark:text-slate-300 text-xs leading-relaxed space-y-3 font-medium">
+                    <h4 className="font-bold text-indigo-700 dark:text-indigo-400 text-sm flex items-center gap-1.5 uppercase tracking-wide">
+                      📋 Hướng dẫn kết nối Google Sheets (Đồng bộ thời gian thực)
+                    </h4>
+                    <ol className="list-decimal pl-5 space-y-2">
+                      <li>
+                        Tạo một bảng tính <strong>Google Sheets</strong> mới.
+                      </li>
+                      <li>
+                        Tạo 2 trang tính (sheet tabs) với tiêu đề chuẩn xác:
+                        <ul className="list-disc pl-5 mt-1 space-y-1 text-[11px]">
+                          <li>
+                            Tab <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold text-indigo-600 dark:text-indigo-400">Nhân viên</code>: Cột A1 nhập <code className="font-bold">MSNV</code>, Cột B1 nhập <code className="font-bold">Họ và tên</code>. Thêm các dòng nhân viên mẫu (Ví dụ: <code className="font-mono text-slate-500">IPC001</code> - <code className="font-mono text-slate-500">Nguyễn Văn An</code>).
+                          </li>
+                          <li>
+                            Tab <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold text-indigo-600 dark:text-indigo-400">Báo cáo tháng</code>: Nhập tiêu đề ở hàng đầu tiên theo thứ tự:<br />
+                            <code className="font-bold text-[11px] text-slate-500">MSNV | Tháng | Số mẫu | Ngày làm | Đi trễ | Quên chấm công | Ngày cập nhật | Họ và tên</code>
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        Vào menu <strong>Tiện ích mở rộng (Extensions)</strong> &rarr; <strong>Apps Script</strong>. Xóa toàn bộ mã nguồn mặc định và dán nội dung trong file <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold">Code.gs</code> ở dự án của bạn vào.
+                      </li>
+                      <li>
+                        Cập nhật ID Bảng tính của bạn vào biến <code className="font-bold">SPREADSHEET_ID</code> ở dòng 21 trong Code Apps Script.
+                      </li>
+                      <li>
+                        Nhấn nút <strong>Triển khai (Deploy)</strong> ở góc trên bên phải &rarr; <strong>Triển khai mới (New deployment)</strong>.
+                        <ul className="list-disc pl-5 mt-1 text-[11px]">
+                          <li>Chọn loại cấu hình là <strong>Ứng dụng web (Web app)</strong>.</li>
+                          <li>Thực thi dưới danh nghĩa (Execute as): <strong>Tôi (Me)</strong>.</li>
+                          <li>Quyền truy cập (Who has access): <strong>Bất kỳ ai (Anyone)</strong>.</li>
+                        </ul>
+                      </li>
+                      <li>
+                        Nhấn Triển khai, cấp quyền truy cập đầy đủ cho Google Script, sau đó <strong>sao chép URL Ứng dụng web</strong> nhận được.
+                      </li>
+                      <li>
+                        Quay lại <strong>AI Studio Build &rarr; Settings (Secrets)</strong>, dán URL vừa copy vào mục <strong>VITE_APPS_SCRIPT_URL</strong> để bắt đầu đồng bộ trực tuyến!
+                      </li>
+                    </ol>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-full min-w-0 overflow-hidden">
               <div className="space-y-1 w-full max-w-full min-w-0 overflow-hidden">
