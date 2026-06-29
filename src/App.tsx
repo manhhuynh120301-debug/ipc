@@ -41,9 +41,9 @@ import { twMerge } from 'tailwind-merge';
 // @ts-ignore
 import topBanner from './assets/banner-top.png';
 // @ts-ignore
-import topBanner2 from './assets/images/banner-top2.png';
+import topBanner2 from './assets/images/banner_top2_1782658687104.jpg';
 // @ts-ignore
-import topBanner3 from './assets/images/banner-top3.png';
+import topBanner3 from './assets/images/banner_top3_1782658701996.jpg';
 // @ts-ignore
 import bottomBanner from './assets/banner-bottom.webp';
 
@@ -671,6 +671,7 @@ export default function App() {
     workDays: number | null;
     lateDays: number | null;
     forgotDays: number | null;
+    name?: string;
   }) => {
     if (!APPS_SCRIPT_URL) {
       console.warn("VITE_APPS_SCRIPT_URL is not set.");
@@ -880,6 +881,7 @@ export default function App() {
         workDays: currentStats.workDays,
         lateDays: currentStats.lateDays,
         forgotDays: currentStats.forgotDays,
+        name: employeeName,
       });
 
       if (data && (data.success || data.local)) {
@@ -889,17 +891,11 @@ export default function App() {
             ? 'Cập nhật thành công (Chế độ Offline).' 
             : 'Đã lưu và cập nhật dữ liệu Google Sheets thành công!' 
         });
-      
         fetchRankings();
         fetchNotifications();
         setHasGeneratedReport(true);
-      
       } else {
-        console.error("SAVE ERROR:", data);
-        setNotification({ 
-          type: 'error', 
-          message: data?.error || 'Không thể cập nhật dữ liệu.'
-        });
+        setNotification({ type: 'error', message: 'Không thể cập nhật dữ liệu.' });
       }
     } catch (err) {
       console.error('Error saving report:', err);
