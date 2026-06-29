@@ -81,7 +81,6 @@ const PREV_STATS_INITIAL: MonthlyStats = {
 };
 
 // --- Components ---
-const requestIdRef = useRef(0);
 const AnimatedNumber = ({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) => {
   const [displayValue, setDisplayValue] = useState(0);
   
@@ -355,7 +354,7 @@ export default function App() {
   const [employeeId, setEmployeeId] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [employeeError, setEmployeeError] = useState('');
-  
+  const requestIdRef = useRef(0);
   // Realtime clock state for the header banner
   const [currentTime, setCurrentTime] = useState(new Date());
   const [scrollY, setScrollY] = useState(0);
