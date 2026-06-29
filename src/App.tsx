@@ -689,20 +689,7 @@ export default function App() {
     });
     return await res.json();
   };
-  
-      const text = await res.text();
-      console.log("RAW RESPONSE:", text);
-  
-      return JSON.parse(text);
-    } catch (err) {
-      console.error("apiSaveReport error:", err);
-      return {
-        success: false,
-        error: String(err)
-      };
-    }
-  };
-    
+
   const fetchNotifications = async () => {
     if (!APPS_SCRIPT_URL) return;
     setIsLoadingNotifs(true);
