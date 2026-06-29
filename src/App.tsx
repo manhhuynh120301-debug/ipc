@@ -1448,8 +1448,8 @@ export default function App() {
           }}
           className="absolute right-[18px] top-[16px] z-50 flex items-center justify-center cursor-pointer bg-white/95 hover:bg-white active:scale-95 transition-all text-slate-800"
           style={{
-            width: '42px',
-            height: '42px',
+            width: isMobile ? '36px' : '42px',
+            height: isMobile ? '36px' : '42px',
             borderRadius: '50%',
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           }}
