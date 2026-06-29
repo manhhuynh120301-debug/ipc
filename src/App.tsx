@@ -664,30 +664,43 @@ export default function App() {
     }
   };
 
-  const apiSaveReport = async (payload: {
-    msnv: string;
-    month: string;
-    samples: number | null;
-    workDays: number | null;
-    lateDays: number | null;
-    forgotDays: number | null;
-    name?: string;
-  }) => {
-    if (!APPS_SCRIPT_URL) {
-      console.warn("VITE_APPS_SCRIPT_URL is not set.");
-      return { success: false, error: "Vui lòng cấu hình VITE_APPS_SCRIPT_URL" };
-    }
+const apiSaveReport = async (payload: {
+  msnv: string;
+  month: string;
+  samples: number | null;
+  workDays: number | null;
+  lateDays: number | null;
+  forgotDays: number | null;
+  name?: string;
+}) => {
+  if (!APPS_SCRIPT_URL) {
+    return { success: false, error: "Missing Script URL" };
+  }
+
+  try {
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'cors',
       headers: {
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         action: 'saveReport',
         ...payload
       }),
     });
+
+    const text = await res.text();
+    console.log("RAW RESPONSE:", text);
+
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("apiSaveReport error:", err);
+    return {
+      success: false,
+      error: String(err)
+    };
+  }
+};
     return await res.json();
   };
 
