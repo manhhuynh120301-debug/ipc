@@ -1357,15 +1357,16 @@ export default function App() {
   ];
 
   // Layered scroll calculations (iOS-like parallax and overlap)
-  let cardMarginTop = 24;
+  let cardMarginTop = 0;
+  
   if (scrollY <= 80) {
-    cardMarginTop = 24 + 0.4 * scrollY;
+    cardMarginTop = 0 + 0.2 * scrollY;
   } else if (scrollY <= 180) {
     const progress = (scrollY - 80) / 100;
-    const gap = 24 - progress * 64; // goes from 24px to -40px
-    cardMarginTop = gap + 0.4 * scrollY;
+    const gap = 16 - progress * 16;
+    cardMarginTop = gap;
   } else {
-    cardMarginTop = 32;
+    cardMarginTop = 0;
   }
 
   return (
@@ -1562,11 +1563,11 @@ export default function App() {
       </AnimatePresence>
 
       {/* Spacer to push content down below the fixed top banner */}
-      <div style={{ height: `${bannerHeight}px` }} />
+      <div style={{ height: `${bannerHeight - 40}px` }} />
 
       {/* Main Content */}
       <main 
-        className="w-full max-w-full relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] border-t border-slate-200/50"
+        className="w-full max-w-full relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-non"
         style={{
           marginTop: `${cardMarginTop}px`,
           transition: 'all 0.3s ease',
