@@ -880,7 +880,6 @@ export default function App() {
         workDays: currentStats.workDays,
         lateDays: currentStats.lateDays,
         forgotDays: currentStats.forgotDays,
-        name: employeeName,
       });
 
       if (data && (data.success || data.local)) {
