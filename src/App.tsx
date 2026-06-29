@@ -1601,14 +1601,14 @@ export default function App() {
 
       {/* Main Content */}
       <main 
-        className="w-full max-w-full relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-non"
+        className="w-screen relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-non"
         style={{
           marginTop: `${cardMarginTop}px`,
           transition: 'non',
         }}
       >
 
-        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-[88vw] mx-auto">
+        <div className="px-4 xl:px-8 pt-4 pb-6 space-y-6 w-full">
           {/* PWA Install Prompt Card */}
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
@@ -1672,7 +1672,7 @@ export default function App() {
           <motion.section 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-[88vw] mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
+            className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
           >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-4">
