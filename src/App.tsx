@@ -81,7 +81,7 @@ const PREV_STATS_INITIAL: MonthlyStats = {
 };
 
 // --- Components ---
-
+const requestIdRef = useRef(0);
 const AnimatedNumber = ({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) => {
   const [displayValue, setDisplayValue] = useState(0);
   
@@ -976,16 +976,35 @@ export default function App() {
 
   // Employee MSNV lookup debounced
   useEffect(() => {
-    if (!employeeId.trim()) {
+    const msnv = employeeId.trim();
+  
+    if (!msnv) {
       setEmployeeName('');
       setEmployeeError('');
+      setIsSearching(false);
       return;
     }
-
-    setIsSearching(true);
+  
+    // Chỉ search khi đủ 4 ký tự
+    if (msnv.length < 4) {
+      setEmployeeName('');
+      setEmployeeError('');
+      setIsSearching(false);
+      return;
+    }
+  
     const timer = setTimeout(async () => {
+      const currentRequestId = ++requestIdRef.current;
+      setIsSearching(true);
+  
       try {
-        const data = await apiGetEmployee(employeeId.trim());
+        const data = await apiGetEmployee(msnv);
+  
+        // bỏ response cũ
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+  
         if (data.found) {
           setEmployeeName(data.name);
           setEmployeeError('');
@@ -994,17 +1013,21 @@ export default function App() {
           setEmployeeError('Không tìm thấy mã nhân viên.');
         }
       } catch (err) {
-        console.error('Error fetching employee:', err);
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+  
         setEmployeeName('');
         setEmployeeError('Lỗi kết nối máy chủ.');
       } finally {
-        setIsSearching(false);
+        if (currentRequestId === requestIdRef.current) {
+          setIsSearching(false);
+        }
       }
-    }, 150);
-
+    }, 400);
+  
     return () => clearTimeout(timer);
   }, [employeeId]);
-
   // Load previous stats automatically from Sheet
   useEffect(() => {
     if (!employeeId.trim() || !employeeName) {
