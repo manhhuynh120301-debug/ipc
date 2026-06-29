@@ -1686,8 +1686,8 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2">
                 {googleSheetsConnected ? (
-                  <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-[10px] font-bold uppercase tracking-normal">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="flex items-center gap-1 px-2 md:px-2.5 py-0.5 md:py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-[8px] md:text-[10px] font-bold uppercase tracking-normal whitespace-nowrap shrink-0">
+                    <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     Connected
                   </div>
                 ) : (
