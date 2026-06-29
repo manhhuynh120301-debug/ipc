@@ -49,15 +49,15 @@
 /* Bottom banner */
 .app-bottom-banner {
   width: 100%;
-  min-height: 120px;
+  min-height: 140px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   overflow: hidden;
   background-repeat: no-repeat;
-  background-position: center bottom;
-  background-size: 100% auto;
-  height: 120px;
+  background-position: center center;
+  background-size: 130% auto;
+  height: 140px;
   background-color: transparent;
   border: none !important;
   border-radius: 0 !important;
@@ -68,22 +68,22 @@
 
 @media (min-width: 640px) {
   .app-bottom-banner {
-    height: 220px;
-    background-size: 90% auto;
+    height: 240px;
+    background-size: 115% auto;
   }
 }
 
 @media (min-width: 1024px) {
   .app-bottom-banner {
-    height: 280px;
-    background-size: 80% auto;
+    height: 320px;
+    background-size: 108% auto;
   }
 }
 
 @media (min-width: 1440px) {
   .app-bottom-banner {
-    height: 280px;
-    background-size: 70% auto;
+    height: 340px;
+    background-size: 102% auto;
   }
 }
 
