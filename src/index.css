@@ -87,72 +87,223 @@
   }
 }
 
-/* Clock */
-.carousel-clock-time {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-weight: 700;
-  color: white;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  font-size: 28px;
-  line-height: 1.1;
+/* Split Clock glassmorphism styling */
+.split-clock-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   user-select: none;
 }
 
-@media (min-width: 480px) {
-  .carousel-clock-time {
+@media (min-width: 640px) {
+  .split-clock-container {
+    gap: 10px;
+  }
+}
+
+.split-clock-boxes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 640px) {
+  .split-clock-boxes {
+    gap: 6px;
+  }
+}
+
+.split-clock-box-wrapper {
+  position: relative;
+  /* Desktop dimensions: width 54px, height 76px */
+  width: 54px;
+  height: 76px;
+  perspective: 400px;
+}
+
+@media (max-width: 767px) {
+  .split-clock-box-wrapper {
+    /* Mobile dimensions: width 46px, height 68px */
+    width: 46px;
+    height: 68px;
+  }
+}
+
+.split-clock-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Base style for the halves */
+.split-clock-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  display: flex;
+  justify-content: center;
+}
+
+.split-clock-top {
+  top: 0;
+  height: 50%;
+  border-bottom: none;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  align-items: flex-start;
+}
+
+@media (max-width: 767px) {
+  .split-clock-top {
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+  }
+}
+
+.split-clock-bottom {
+  bottom: 0;
+  height: 50%;
+  border-top: none;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  align-items: flex-end;
+}
+
+@media (max-width: 767px) {
+  .split-clock-bottom {
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+  }
+}
+
+/* The actual text/number wrapper */
+.split-clock-num {
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro", "Segoe UI", Roboto, sans-serif;
+  font-weight: 800;
+  color: #ffffff;
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  
+  /* Desktop font size and height placement */
+  font-size: 38px;
+  line-height: 76px;
+  height: 76px;
+}
+
+@media (max-width: 767px) {
+  .split-clock-num {
+    /* Mobile font size and height placement */
     font-size: 32px;
+    line-height: 68px;
+    height: 68px;
   }
 }
 
-@media (min-width: 768px) {
-  .carousel-clock-time {
-    font-size: 44px;
+.split-clock-top .split-clock-num {
+  top: 0;
+}
+
+.split-clock-bottom .split-clock-num {
+  top: -38px; /* Desktop: negative height / 2 */
+}
+
+@media (max-width: 767px) {
+  .split-clock-bottom .split-clock-num {
+    top: -34px; /* Mobile: negative height / 2 */
   }
 }
 
-@media (min-width: 1024px) {
-  .carousel-clock-time {
-    font-size: 56px;
+/* Center line divider */
+.split-clock-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+/* Animated Flap */
+.split-clock-flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: none;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  
+  transform-origin: top center;
+  backface-visibility: hidden;
+  z-index: 4;
+  animation: flap-down 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (max-width: 767px) {
+  .split-clock-flap {
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
   }
 }
 
-@media (min-width: 1440px) {
-  .carousel-clock-time {
-    font-size: 64px;
+.split-clock-flap .split-clock-num {
+  top: -38px; /* Desktop: negative height / 2 */
+}
+
+@media (max-width: 767px) {
+  .split-clock-flap .split-clock-num {
+    top: -34px; /* Mobile: negative height / 2 */
   }
 }
 
-.carousel-clock-date {
+@keyframes flap-down {
+  0% {
+    transform: rotateX(-90deg);
+    filter: brightness(0.65);
+  }
+  100% {
+    transform: rotateX(0deg);
+    filter: brightness(1);
+  }
+}
+
+.split-clock-date {
   font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
-  font-weight: 500;
-  color: white;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-size: 11px;
   margin-top: 4px;
-  user-select: none;
-}
-
-@media (min-width: 480px) {
-  .carousel-clock-date {
-    font-size: 14px;
-  }
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 @media (min-width: 768px) {
-  .carousel-clock-date {
-    font-size: 18px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .carousel-clock-date {
-    font-size: 22px;
-  }
-}
-
-@media (min-width: 1440px) {
-  .carousel-clock-date {
-    font-size: 24px;
+  .split-clock-date {
+    font-size: 14px;
+    margin-top: 8px;
+    letter-spacing: 0.8px;
   }
 }
