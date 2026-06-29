@@ -1082,7 +1082,7 @@ export default function App() {
           type: 'success', 
           message: data.local 
             ? 'Cập nhật thành công (Chế độ Offline).' 
-            : 'Đã lưu và cập nhật dữ liệu Google Sheets thành công!' 
+            : 'Đã cập nhật báo cáo thành công!' 
         });
         fetchRankings();
         fetchNotifications();
@@ -1688,7 +1688,7 @@ export default function App() {
                 {googleSheetsConnected ? (
                   <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-[10px] font-bold uppercase tracking-normal">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Đã kết nối Google Sheets
+                    Connected
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap">
