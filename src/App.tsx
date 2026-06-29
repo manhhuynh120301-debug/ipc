@@ -375,15 +375,15 @@ export default function App() {
     const updateHeight = () => {
       const w = window.innerWidth;
       if (w >= 1920) {
-        setBannerHeight(300);
+        setBannerHeight(380);
       } else if (w >= 1024) {
-        setBannerHeight(260);
+        setBannerHeight(340);
       } else if (w >= 768) {
-        setBannerHeight(220);
+        setBannerHeight(280);
       } else if (w >= 480) {
-        setBannerHeight(180);
+        setBannerHeight(240);
       } else {
-        setBannerHeight(160);
+        setBannerHeight(210);
       }
     };
     updateHeight();
@@ -2308,4 +2308,3 @@ export default function App() {
     </div>
   );
 }
-
