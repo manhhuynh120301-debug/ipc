@@ -1525,35 +1525,48 @@ export default function App() {
                     Không có thông báo mới nào
                   </div>
                 ) : (
-                  filteredNotifications.map((notif, idx) => (
-                    <div 
-                      key={idx}
-                      id={`notif-card-${idx}`}
-                      className="flex flex-col gap-1 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #f1f5f9',
-                        borderRadius: '20px',
-                        padding: '18px 20px',
-                        boxShadow: '0 4px 18px rgba(148, 163, 184, 0.12)',
-                      }}
-                    >
+                  filteredNotifications.map((notif, idx) => {
+                    const notifDate = parseCustomDate(notif.date);
+                    const isRecent = notifDate ? (new Date().getTime() - notifDate.getTime() <= 24 * 60 * 60 * 1000) : false;
+
+                    return (
                       <div 
-                        className="font-mono"
+                        key={idx}
+                        id={`notif-card-${idx}`}
+                        className={`flex flex-col gap-1.5 transition-all duration-300 hover:scale-[1.01] cursor-pointer ${
+                          isRecent 
+                            ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/40 shadow-md shadow-blue-100/50 dark:shadow-none" 
+                            : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 shadow-sm shadow-slate-100/5 dark:shadow-none"
+                        }`}
                         style={{
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          color: '#3B82F6',
+                          borderRadius: '20px',
+                          padding: '18px 20px',
                         }}
                       >
-                        {formatNotificationDate(notif.date)}
+                        <div className="flex items-center justify-between gap-2">
+                          <div 
+                            className="font-mono"
+                            style={{
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              color: '#3B82F6',
+                            }}
+                          >
+                            {formatNotificationDate(notif.date)}
+                          </div>
+                          {isRecent && (
+                            <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 select-none">
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-sans leading-snug" style={{ fontSize: '14px' }}>
+                          <span className="font-bold text-slate-800 dark:text-slate-100">{notif.name}</span>
+                          <span className="font-medium text-slate-600 dark:text-slate-400"> đã cập nhật báo cáo</span>
+                        </div>
                       </div>
-                      <div className="font-sans leading-snug" style={{ fontSize: '14px' }}>
-                        <span style={{ fontWeight: 700, color: '#1e293b' }}>{notif.name}</span>
-                        <span style={{ fontWeight: 500, color: '#475569' }}> đã cập nhật báo cáo</span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>
