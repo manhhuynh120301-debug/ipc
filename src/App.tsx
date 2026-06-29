@@ -1604,7 +1604,7 @@ export default function App() {
         className="w-full max-w-full relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-non"
         style={{
           marginTop: `${cardMarginTop}px`,
-          transition: 'all 0.3s ease',
+          transition: 'non',
         }}
       >
 
