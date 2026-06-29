@@ -1416,7 +1416,7 @@ export default function App() {
               <img 
                 src={src} 
                 alt={`Banner slide ${idx + 1}`}
-                className="w-full h-full object-cover lg:object-contain object-center block"
+                className="w-full h-full object-cover object-center block"
                 referrerPolicy="no-referrer"
               />
               {/* Subtle overlay to ensure readability */}
