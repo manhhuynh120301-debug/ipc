@@ -1490,7 +1490,7 @@ export default function App() {
           )}
         </button>
         
-        <div className="max-w-6xl mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
+        <div className="max-w-[88vw] mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
           <div className="absolute right-[6%] top-1/2 -translate-y-1/2 text-right z-10 select-none">
             <div className="carousel-clock-time">
               {formattedTime}
@@ -1608,7 +1608,7 @@ export default function App() {
         }}
       >
 
-        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-6xl mx-auto">
+        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-[88vw] mx-auto">
           {/* PWA Install Prompt Card */}
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
@@ -1616,7 +1616,7 @@ export default function App() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="max-w-6xl mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
+                className="max-w-[88vw] mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
               >
                 <div className="flex items-start gap-3 sm:gap-4">
                   <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex-shrink-0">
@@ -1672,7 +1672,7 @@ export default function App() {
           <motion.section 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-6xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
+            className="max-w-[88vw] mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
           >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-4">
@@ -1807,7 +1807,7 @@ export default function App() {
           </motion.section>
 
           {/* Input Panel Section - Data Detail */}
-          <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
+          <div className="max-w-[88vw] mx-auto grid grid-cols-2 gap-4">
             {/* Current Month Panel */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
@@ -1932,7 +1932,7 @@ export default function App() {
           </div>
 
           {/* Primary Action Button */}
-          <div className="max-w-6xl mx-auto flex justify-center mt-2 pb-2">
+          <div className="max-w-[88vw] mx-auto flex justify-center mt-2 pb-2">
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(99, 102, 241, 0.4)" }}
               whileTap={{ scale: 0.98 }}
