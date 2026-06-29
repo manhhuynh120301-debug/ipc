@@ -1420,7 +1420,7 @@ export default function App() {
       <div 
         className="w-full fixed top-0 left-0 right-0 z-1 flex items-center px-6 sm:px-10 border-b border-slate-200/40 overflow-hidden shrink-0"
         style={{
-          transform: `translateY(-${Math.min(scrollY * 0.6, bannerHeight)}px)`,
+          transform: `translateY(0px)`,
           height: `${bannerHeight}px`,
         }}
       >
