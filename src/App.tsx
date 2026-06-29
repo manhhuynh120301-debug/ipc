@@ -1652,7 +1652,7 @@ export default function App() {
         }}
       >
 
-        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-6xl mx-auto">
+        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-7xl xl:max-w-[1700px] mx-auto">
           {/* PWA Install Prompt Card */}
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
