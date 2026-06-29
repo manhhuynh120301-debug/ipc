@@ -355,12 +355,12 @@ export default function App() {
   const [employeeName, setEmployeeName] = useState('');
   const [employeeError, setEmployeeError] = useState('');
   const requestIdRef = useRef(0);
-  // Realtime clock state for the header 
+  // Realtime clock state for the header banner
   const [currentTime, setCurrentTime] = useState(new Date());
   const [scrollY, setScrollY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Top  carousel states
+  // Top banner carousel states
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const banners = [
     '/assets/banner-top.png',
@@ -369,21 +369,21 @@ export default function App() {
   ];
   const bannerImages = [topBanner, topBanner2, topBanner3];
 
-  const [bannerHeight, setBannerHeight] = useState(320);
+  const [bannerHeight, setBannerHeight] = useState(260);
 
   useEffect(() => {
     const updateHeight = () => {
       const w = window.innerWidth;
       if (w >= 1920) {
-        setBannerHeight(420);
+        setBannerHeight(300);
       } else if (w >= 1024) {
-        setBannerHeight(380);
+        setBannerHeight(260);
       } else if (w >= 768) {
-        setBannerHeight(280);
-      } else if (w >= 480) {
         setBannerHeight(220);
-      } else {
+      } else if (w >= 480) {
         setBannerHeight(180);
+      } else {
+        setBannerHeight(160);
       }
     };
     updateHeight();
@@ -1420,7 +1420,7 @@ export default function App() {
       <div 
         className="w-full fixed top-0 left-0 right-0 z-1 flex items-center px-6 sm:px-10 border-b border-slate-200/40 overflow-hidden shrink-0"
         style={{
-          transform: `translateY(0px)`,
+          transform: `translateY(-${Math.min(scrollY * 0.6, bannerHeight)}px)`,
           height: `${bannerHeight}px`,
         }}
       >
@@ -1491,60 +1491,16 @@ export default function App() {
         </button>
         
         <div className="max-w-6xl mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
-          <div className="absolute right-[6%] top-1/2 -translate-y-1/2 z-10 select-none">
-            <div className="split-clock-container">
-              <div className="split-clock-boxes">
-                <div className="split-clock-box-wrapper">
-                  <div key={currentTime.getHours()} className="split-clock-box">
-                    <div className="split-clock-half split-clock-top">
-                      <span className="split-clock-num">{padNum(currentTime.getHours())}</span>
-                    </div>
-                    <div className="split-clock-half split-clock-bottom">
-                      <span className="split-clock-num">{padNum(currentTime.getHours())}</span>
-                    </div>
-                    <div className="split-clock-flap">
-                      <span className="split-clock-num">{padNum(currentTime.getHours())}</span>
-                    </div>
-                    <div className="split-clock-divider" />
-                  </div>
-                </div>
-                <div className="split-clock-box-wrapper">
-                  <div key={currentTime.getMinutes()} className="split-clock-box">
-                    <div className="split-clock-half split-clock-top">
-                      <span className="split-clock-num">{padNum(currentTime.getMinutes())}</span>
-                    </div>
-                    <div className="split-clock-half split-clock-bottom">
-                      <span className="split-clock-num">{padNum(currentTime.getMinutes())}</span>
-                    </div>
-                    <div className="split-clock-flap">
-                      <span className="split-clock-num">{padNum(currentTime.getMinutes())}</span>
-                    </div>
-                    <div className="split-clock-divider" />
-                  </div>
-                </div>
-                <div className="split-clock-box-wrapper">
-                  <div key={currentTime.getSeconds()} className="split-clock-box">
-                    <div className="split-clock-half split-clock-top">
-                      <span className="split-clock-num">{padNum(currentTime.getSeconds())}</span>
-                    </div>
-                    <div className="split-clock-half split-clock-bottom">
-                      <span className="split-clock-num">{padNum(currentTime.getSeconds())}</span>
-                    </div>
-                    <div className="split-clock-flap">
-                      <span className="split-clock-num">{padNum(currentTime.getSeconds())}</span>
-                    </div>
-                    <div className="split-clock-divider" />
-                  </div>
-                </div>
-              </div>
-              <div className="split-clock-date">
-                {formattedDate}
-              </div>
+          <div className="absolute right-[6%] top-1/2 -translate-y-1/2 text-right z-10 select-none">
+            <div className="carousel-clock-time">
+              {formattedTime}
+            </div>
+            <div className="carousel-clock-date">
+              {formattedDate}
             </div>
           </div>
         </div>
       </div>
-
 
       {/* Notification Panel dropdown / slide-down modal */}
       <AnimatePresence>
@@ -1641,18 +1597,18 @@ export default function App() {
       </AnimatePresence>
 
       {/* Spacer to push content down below the fixed top banner */}
-      <div style={{ height: `${bannerHeight}px` }} />
+      <div style={{ height: `${bannerHeight - 40}px` }} />
 
       {/* Main Content */}
       <main 
         className="w-full max-w-full relative z-10 flex flex-col bg-[#f8fafc] dark:bg-slate-950 rounded-t-[28px] shadow-non"
         style={{
           marginTop: `${cardMarginTop}px`,
-          transition: 'non',
+          transition: 'all 0.3s ease',
         }}
       >
 
-        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-[88vw] mx-auto">
+        <div className="px-6 pt-4 pb-6 space-y-6 w-full max-w-6xl mx-auto">
           {/* PWA Install Prompt Card */}
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
@@ -1660,7 +1616,7 @@ export default function App() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="max-w-[88vw] mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
+                className="max-w-6xl mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
               >
                 <div className="flex items-start gap-3 sm:gap-4">
                   <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex-shrink-0">
@@ -1716,7 +1672,7 @@ export default function App() {
           <motion.section 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="ax-w-[88vw] mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
+            className="max-w-6xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
           >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-4">
@@ -1851,7 +1807,7 @@ export default function App() {
           </motion.section>
 
           {/* Input Panel Section - Data Detail */}
-          <div className="max-w-[88vw] mx-auto grid grid-cols-2 gap-4">
+          <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
             {/* Current Month Panel */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
@@ -1976,7 +1932,7 @@ export default function App() {
           </div>
 
           {/* Primary Action Button */}
-          <div className="max-w-[88vw] mx-auto flex justify-center mt-2 pb-2">
+          <div className="max-w-6xl mx-auto flex justify-center mt-2 pb-2">
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(99, 102, 241, 0.4)" }}
               whileTap={{ scale: 0.98 }}
