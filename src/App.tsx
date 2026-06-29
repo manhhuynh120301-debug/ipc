@@ -355,12 +355,12 @@ export default function App() {
   const [employeeName, setEmployeeName] = useState('');
   const [employeeError, setEmployeeError] = useState('');
   const requestIdRef = useRef(0);
-  // Realtime clock state for the header banner
+  // Realtime clock state for the header 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [scrollY, setScrollY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Top banner carousel states
+  // Top  carousel states
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const banners = [
     '/assets/banner-top.png',
@@ -1597,7 +1597,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Spacer to push content down below the fixed top banner */}
-      <div style={{ height: `${bannerHeight - 40}px` }} />
+      <div style={{ height: `${bannerHeight}px` }} />
 
       {/* Main Content */}
       <main 
