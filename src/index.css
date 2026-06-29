@@ -131,9 +131,9 @@
 
 @media (max-width: 767px) {
   .split-clock-box-wrapper {
-    /* Mobile dimensions: width 46px, height 68px */
-    width: 46px;
-    height: 68px;
+    /* Mobile dimensions: width 32px, height 48px */
+    width: 32px;
+    height: 48px;
   }
 }
 
@@ -169,8 +169,8 @@
 
 @media (max-width: 767px) {
   .split-clock-top {
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
   }
 }
 
@@ -185,8 +185,8 @@
 
 @media (max-width: 767px) {
   .split-clock-bottom {
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 }
 
@@ -209,9 +209,9 @@
 @media (max-width: 767px) {
   .split-clock-num {
     /* Mobile font size and height placement */
-    font-size: 32px;
-    line-height: 68px;
-    height: 68px;
+    font-size: 22px;
+    line-height: 48px;
+    height: 48px;
   }
 }
 
@@ -225,7 +225,7 @@
 
 @media (max-width: 767px) {
   .split-clock-bottom .split-clock-num {
-    top: -34px; /* Mobile: negative height / 2 */
+    top: -24px; /* Mobile: negative height / 2 */
   }
 }
 
@@ -269,8 +269,8 @@
 
 @media (max-width: 767px) {
   .split-clock-flap {
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 }
 
@@ -280,7 +280,7 @@
 
 @media (max-width: 767px) {
   .split-clock-flap .split-clock-num {
-    top: -34px; /* Mobile: negative height / 2 */
+    top: -24px; /* Mobile: negative height / 2 */
   }
 }
 
@@ -313,5 +313,6 @@
     letter-spacing: 1.2px;
   }
 }
+
 
 
