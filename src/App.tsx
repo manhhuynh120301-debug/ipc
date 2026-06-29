@@ -1490,17 +1490,61 @@ export default function App() {
           )}
         </button>
         
-        <div className="max-w-[88vw] mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
-          <div className="absolute right-[6%] top-1/2 -translate-y-1/2 text-right z-10 select-none">
-            <div className="carousel-clock-time">
-              {formattedTime}
-            </div>
-            <div className="carousel-clock-date">
-              {formattedDate}
+        <div className="max-w-6xl mx-auto w-full relative h-full flex flex-col md:flex-row md:items-center justify-between z-10 py-2">
+          <div className="absolute right-[6%] top-1/2 -translate-y-1/2 z-10 select-none">
+            <div className="split-clock-container">
+              <div className="split-clock-boxes">
+                <div className="split-clock-box-wrapper">
+                  <div key={currentTime.getHours()} className="split-clock-box">
+                    <div className="split-clock-half split-clock-top">
+                      <span className="split-clock-num">{padNum(currentTime.getHours())}</span>
+                    </div>
+                    <div className="split-clock-half split-clock-bottom">
+                      <span className="split-clock-num">{padNum(currentTime.getHours())}</span>
+                    </div>
+                    <div className="split-clock-flap">
+                      <span className="split-clock-num">{padNum(currentTime.getHours())}</span>
+                    </div>
+                    <div className="split-clock-divider" />
+                  </div>
+                </div>
+                <div className="split-clock-box-wrapper">
+                  <div key={currentTime.getMinutes()} className="split-clock-box">
+                    <div className="split-clock-half split-clock-top">
+                      <span className="split-clock-num">{padNum(currentTime.getMinutes())}</span>
+                    </div>
+                    <div className="split-clock-half split-clock-bottom">
+                      <span className="split-clock-num">{padNum(currentTime.getMinutes())}</span>
+                    </div>
+                    <div className="split-clock-flap">
+                      <span className="split-clock-num">{padNum(currentTime.getMinutes())}</span>
+                    </div>
+                    <div className="split-clock-divider" />
+                  </div>
+                </div>
+                <div className="split-clock-box-wrapper">
+                  <div key={currentTime.getSeconds()} className="split-clock-box">
+                    <div className="split-clock-half split-clock-top">
+                      <span className="split-clock-num">{padNum(currentTime.getSeconds())}</span>
+                    </div>
+                    <div className="split-clock-half split-clock-bottom">
+                      <span className="split-clock-num">{padNum(currentTime.getSeconds())}</span>
+                    </div>
+                    <div className="split-clock-flap">
+                      <span className="split-clock-num">{padNum(currentTime.getSeconds())}</span>
+                    </div>
+                    <div className="split-clock-divider" />
+                  </div>
+                </div>
+              </div>
+              <div className="split-clock-date">
+                {formattedDate}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Notification Panel dropdown / slide-down modal */}
       <AnimatePresence>
