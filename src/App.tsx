@@ -879,7 +879,7 @@ export default function App() {
 
   useEffect(() => {
     fetchNotifications();
-    const timer = setInterval(fetchNotifications, 20000);
+    const timer = setInterval(fetchNotifications, 5000);
     return () => clearInterval(timer);
   }, [APPS_SCRIPT_URL]);
 
