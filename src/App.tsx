@@ -664,43 +664,38 @@ export default function App() {
     }
   };
 
-const apiSaveReport = async (payload: {
-  msnv: string;
-  month: string;
-  samples: number | null;
-  workDays: number | null;
-  lateDays: number | null;
-  forgotDays: number | null;
-  name?: string;
-}) => {
-  if (!APPS_SCRIPT_URL) {
-    return { success: false, error: "Missing Script URL" };
-  }
-
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'saveReport',
-        ...payload
-      }),
-    });
-
-    const text = await res.text();
-    console.log("RAW RESPONSE:", text);
-
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("apiSaveReport error:", err);
-    return {
-      success: false,
-      error: String(err)
-    };
-  }
-};
+  const apiSaveReport = async (payload) => {
+    if (!APPS_SCRIPT_URL) {
+      return { success: false, error: "Missing Script URL" };
+    }
+  
+    try {
+      console.log("APPS_SCRIPT_URL =", APPS_SCRIPT_URL);
+      console.log("Saving payload =", payload);
+  
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'saveReport',
+          ...payload
+        }),
+      });
+  
+      const text = await res.text();
+      console.log("RAW RESPONSE:", text);
+  
+      return JSON.parse(text);
+    } catch (err) {
+      console.error("apiSaveReport error:", err);
+      return {
+        success: false,
+        error: String(err)
+      };
+    }
+  };
     return await res.json();
   };
 
@@ -907,9 +902,13 @@ const apiSaveReport = async (payload: {
         fetchRankings();
         fetchNotifications();
         setHasGeneratedReport(true);
-      } else {
-        setNotification({ type: 'error', message: 'Không thể cập nhật dữ liệu.' });
-      }
+        else {
+          console.error("SAVE ERROR:", data);
+          setNotification({ 
+            type: 'error', 
+            message: data?.error || 'Không thể cập nhật dữ liệu.'
+          });
+        }
     } catch (err) {
       console.error('Error saving report:', err);
       setNotification({ type: 'error', message: 'Lỗi kết nối khi lưu dữ liệu.' });
