@@ -1000,7 +1000,7 @@ export default function App() {
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [employeeId]);
