@@ -1357,16 +1357,15 @@ export default function App() {
   ];
 
   // Layered scroll calculations (iOS-like parallax and overlap)
-  let cardMarginTop = 0;
-  
+  let cardMarginTop = 24;
   if (scrollY <= 80) {
-    cardMarginTop = 0 + 0.2 * scrollY;
+    cardMarginTop = 24 + 0.4 * scrollY;
   } else if (scrollY <= 180) {
     const progress = (scrollY - 80) / 100;
-    const gap = 16 - progress * 16;
-    cardMarginTop = gap;
+    const gap = 24 - progress * 64;
+    cardMarginTop = gap + 0.4 * scrollY;
   } else {
-    cardMarginTop = 0;
+    cardMarginTop = 32;
   }
 
   return (
