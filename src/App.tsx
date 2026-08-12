@@ -80,6 +80,20 @@ const PREV_STATS_INITIAL: MonthlyStats = {
   forgotDays: null,
 };
 
+// --- Dynamic month helpers ---
+// Always use the browser's local date so the dashboard follows the user's
+// current month automatically instead of keeping a hard-coded YYYY-MM value.
+const getMonthKey = (date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+};
+
+const getPreviousMonthKey = (date = new Date()): string => {
+  const previous = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+  return getMonthKey(previous);
+};
+
 // --- Components ---
 const AnimatedNumber = ({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -414,6 +428,21 @@ export default function App() {
     return () => clearInterval(clockTimer);
   }, []);
 
+  // When the real calendar month rolls over, reset the three dashboard
+  // selectors automatically: report = current month, comparison/ranking = previous month.
+  // Manual month selection remains possible during the current month.
+  const lastAutoMonthRef = useRef(getMonthKey());
+  useEffect(() => {
+    const currentMonthKey = getMonthKey(currentTime);
+    if (currentMonthKey === lastAutoMonthRef.current) return;
+
+    const previousMonthKey = getPreviousMonthKey(currentTime);
+    setReportingMonth(currentMonthKey);
+    setComparisonMonth(previousMonthKey);
+    setRankingMonth(previousMonthKey);
+    lastAutoMonthRef.current = currentMonthKey;
+  }, [currentTime]);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
@@ -427,8 +456,10 @@ export default function App() {
     };
   }, []);
   
-  const [reportingMonth, setReportingMonth] = useState('2026-07');
-  const [comparisonMonth, setComparisonMonth] = useState('2026-06');
+  // Default month values are calculated from the real current date.
+  // Example: in August 2026 -> report = 2026-08, comparison = 2026-07.
+  const [reportingMonth, setReportingMonth] = useState(() => getMonthKey());
+  const [comparisonMonth, setComparisonMonth] = useState(() => getPreviousMonthKey());
 
   const [currentStats, setCurrentStats] = useState<MonthlyStats>({
     month: 'Tháng hiện tại',
@@ -537,8 +568,9 @@ export default function App() {
 
   // Calculate Start and End Date for a given report month
   const getCycleBounds = (reportingMonthStr: string) => {
-    let year = 2026;
-    let month = 6;
+    const now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth() + 1;
     
     if (reportingMonthStr.includes('-')) {
       const parts = reportingMonthStr.split('-');
@@ -619,7 +651,9 @@ export default function App() {
     forgotDays: number;
   }
 
-  const [rankingMonth, setRankingMonth] = useState('2026-06');
+  // Ranking is intentionally one month behind the real current month.
+  // Example: current month = 2026-08 -> ranking month = 2026-07.
+  const [rankingMonth, setRankingMonth] = useState(() => getPreviousMonthKey());
   const [rankings, setRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
 
@@ -1830,7 +1864,15 @@ export default function App() {
                   <input 
                     type="month" 
                     value={reportingMonth}
-                    onChange={e => setReportingMonth(e.target.value)}
+                    max={getMonthKey(currentTime)}
+                    onChange={e => {
+                      const nextMonth = e.target.value;
+                      setReportingMonth(nextMonth);
+                      if (nextMonth) {
+                        const [year, month] = nextMonth.split('-').map(Number);
+                        setComparisonMonth(getPreviousMonthKey(new Date(year, month - 1, 1)));
+                      }
+                    }}
                     className="w-full max-w-full min-w-0 box-border overflow-hidden px-4 py-2 bg-transparent text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer [appearance:none] [-webkit-appearance:none]"
                   />
                 </div>
@@ -1843,6 +1885,7 @@ export default function App() {
                   <input 
                     type="month" 
                     value={comparisonMonth}
+                    max={getPreviousMonthKey(currentTime)}
                     onChange={e => setComparisonMonth(e.target.value)}
                     className="w-full max-w-full min-w-0 box-border overflow-hidden px-4 py-2 bg-transparent text-slate-900 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-[16px] md:text-sm cursor-pointer [appearance:none] [-webkit-appearance:none]"
                   />
@@ -2087,11 +2130,12 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto max-w-full min-w-0 overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Chọn tháng</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng xếp hạng</span>
                 <div className="relative w-full sm:w-auto max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
                   <input 
                     type="month" 
                     value={rankingMonth}
+                    max={getPreviousMonthKey(currentTime)}
                     onChange={e => setRankingMonth(e.target.value)}
                     className="w-full sm:w-auto max-w-full min-w-0 box-border overflow-hidden px-3 py-1.5 bg-transparent text-slate-900 dark:text-white font-bold text-[16px] md:text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 [appearance:none] [-webkit-appearance:none]"
                   />
