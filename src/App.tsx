@@ -427,8 +427,25 @@ export default function App() {
     };
   }, []);
   
-  const [reportingMonth, setReportingMonth] = useState('2026-07');
-  const [comparisonMonth, setComparisonMonth] = useState('2026-06');
+  // Month controls are always derived from the real current date.
+  // This keeps the report month, comparison month, and IPC ranking in sync
+  // automatically when a new month begins.
+  const getMonthInputValue = (date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const currentMonth = useMemo(
+    () => getMonthInputValue(currentTime),
+    [currentTime]
+  );
+
+  const previousMonth = useMemo(() => {
+    const date = new Date(currentTime.getFullYear(), currentTime.getMonth() - 1, 1);
+    return getMonthInputValue(date);
+  }, [currentTime]);
+
+  const [reportingMonth, setReportingMonth] = useState(currentMonth);
+  const [comparisonMonth, setComparisonMonth] = useState(previousMonth);
 
   const [currentStats, setCurrentStats] = useState<MonthlyStats>({
     month: 'Tháng hiện tại',
@@ -2087,7 +2104,7 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto max-w-full min-w-0 overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Chọn tháng</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng hiện tại</span>
                 <div className="relative w-full sm:w-auto max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
                   <input 
                     type="month" 
