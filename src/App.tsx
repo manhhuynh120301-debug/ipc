@@ -636,7 +636,7 @@ export default function App() {
     forgotDays: number;
   }
 
-  const [rankingMonth, setRankingMonth] = useState('2026-06');
+  const [rankingMonth, setRankingMonth] = useState(currentMonth);
   const [rankings, setRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
 
