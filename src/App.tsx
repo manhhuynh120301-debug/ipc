@@ -62,6 +62,15 @@ interface MonthlyStats {
   forgotDays: number | null;
 }
 
+interface RankingItem {
+  msnv: string;
+  name: string;
+  samples: number;
+  workDays: number;
+  lateDays: number;
+  forgotDays: number;
+}
+
 // --- Mock Data / Initial State ---
 
 const INITIAL_STATS: MonthlyStats = {
@@ -350,6 +359,164 @@ const RankingSkeleton = () => (
   </div>
 );
 
+// --- Ranking UI: podium top 1-3 + rows top 4+ ---
+// Sorting logic is intentionally unchanged from the original:
+// - "Số mẫu" board sorts by b.samples - a.samples
+// - "Ngày làm" board sorts by b.workDays - a.workDays
+// No previous-month comparison is shown in the rankings.
+
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  return parts.slice(-2).map((p) => p.charAt(0)).join('').toUpperCase();
+};
+
+const PODIUM_STYLES = [
+  {
+    // Top 1: gold, tallest card, crown
+    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] bg-gradient-to-b from-amber-500/[0.15] to-slate-50/60 min-h-[172px]",
+    name: "text-amber-600",
+    numColor: "#d97706",
+    avatar: "from-amber-500 to-red-500 w-12 h-12 text-[15px]",
+    badge: "bg-amber-500",
+  },
+  {
+    // Top 2: blue
+    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] bg-gradient-to-b from-blue-500/[0.14] to-slate-50/60 min-h-[152px]",
+    name: "text-blue-500",
+    numColor: "#3b82f6",
+    avatar: "from-cyan-500 to-blue-600 w-[42px] h-[42px] text-[13px]",
+    badge: "bg-blue-500",
+  },
+  {
+    // Top 3: green, lowest card
+    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] bg-gradient-to-b from-emerald-500/[0.13] to-slate-50/60 min-h-[136px]",
+    name: "text-emerald-600",
+    numColor: "#059669",
+    avatar: "from-emerald-500 to-emerald-700 w-[38px] h-[38px] text-xs",
+    badge: "bg-emerald-500",
+  },
+] as const;
+
+const StatPill = ({
+  item,
+  mode,
+  numColor,
+  className,
+}: {
+  item: RankingItem;
+  mode: 'samples' | 'workDays';
+  numColor?: string;
+  className?: string;
+}) => {
+  const numStyle = numColor ? { color: numColor } : undefined;
+  return (
+    <span className={cn("rounded-xl sm:rounded-full font-black px-2 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border", className)}>
+      {mode === 'samples' ? (
+        <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
+          <span style={numStyle}>{item.samples}</span>
+          <span className="text-[11px] font-semibold text-slate-400">mẫu</span>
+          <span className="text-slate-300 mx-0.5">/</span>
+          <span style={numStyle}>{item.workDays}</span>
+          <span className="text-[11px] font-semibold text-slate-400">ngày</span>
+        </span>
+      ) : (
+        <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
+          <span style={numStyle}>{item.workDays}</span>
+          <span className="text-[11px] font-semibold text-slate-400">ngày</span>
+        </span>
+      )}
+    </span>
+  );
+};
+
+const PodiumCard = ({
+  item,
+  rank,
+  mode,
+}: {
+  item: RankingItem;
+  rank: 0 | 1 | 2; // 0 = top 1, 1 = top 2, 2 = top 3
+  mode: 'samples' | 'workDays';
+}) => {
+  const s = PODIUM_STYLES[rank];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: rank === 0 ? 0 : rank === 1 ? 0.05 : 0.1 }}
+      whileHover={{ y: -6, scale: 1.03 }}
+      className={cn(
+        "group flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-2xl border px-1 py-2.5 cursor-pointer transition-[border-color,box-shadow] duration-300",
+        s.card
+      )}
+    >
+      {rank === 0 ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="w-5 h-[18px] mb-1 text-amber-500 drop-shadow-[0_2px_4px_rgba(245,158,11,0.5)] transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-[8deg]"
+        >
+          <path d="M3 8l4.6 3.8L12 5l4.4 6.8L21 8l-1.6 10.5a1 1 0 0 1-1 .5H5.6a1 1 0 0 1-1-.5z" />
+        </svg>
+      ) : (
+        <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-extrabold mb-1 transition-transform duration-300 group-hover:scale-125", s.badge)}>
+          {rank + 1}
+        </span>
+      )}
+      <div className={cn("rounded-full flex items-center justify-center text-white font-extrabold bg-gradient-to-br shadow-md mb-1.5 transition-transform duration-300 group-hover:scale-110", s.avatar)}>
+        {getInitials(item.name)}
+      </div>
+      <div className={cn("text-[10.5px] font-extrabold truncate max-w-full px-0.5", s.name)}>
+        {item.name}
+      </div>
+      <StatPill
+        item={item}
+        mode={mode}
+        numColor={s.numColor}
+        className="mt-1.5 bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
+      />
+    </motion.div>
+  );
+};
+
+const RankRow = ({
+  item,
+  index,
+  mode,
+}: {
+  item: RankingItem;
+  index: number; // 0-based overall rank
+  mode: 'samples' | 'workDays';
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.05 }}
+      whileHover={{ x: 5 }}
+      className="group flex items-center justify-between px-2.5 py-3 sm:p-3.5 rounded-2xl bg-white/40 border border-transparent hover:bg-[#fefce8] hover:border-[#fef3c7] hover:shadow-[0_4px_14px_rgba(254,240,138,0.35)] transition-colors duration-300 cursor-pointer"
+    >
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+        <span className="w-5 sm:w-6 text-center font-black flex items-center justify-center flex-shrink-0 text-[16px] sm:text-[18px] text-slate-400 group-hover:text-amber-600 transition-colors duration-300">
+          {index + 1}
+        </span>
+        <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
+          <span className="text-[12px] sm:text-base font-black text-slate-800 break-words sm:truncate leading-tight">
+            {item.name}
+          </span>
+        </div>
+      </div>
+      <div className="text-right flex-shrink-0 ml-1.5 sm:ml-2">
+        <StatPill
+          item={item}
+          mode={mode}
+          className="bg-slate-100 text-slate-600 border-slate-200/50 transition-all duration-300 group-hover:scale-105 group-hover:bg-white"
+        />
+      </div>
+    </motion.div>
+  );
+};
+
 export default function App() {
   const [employeeId, setEmployeeId] = useState('');
   const [employeeName, setEmployeeName] = useState('');
@@ -627,16 +794,8 @@ export default function App() {
     return val ? parseInt(val) : 0;
   });
 
-  interface RankingItem {
-    msnv: string;
-    name: string;
-    samples: number;
-    workDays: number;
-    lateDays: number;
-    forgotDays: number;
-  }
-
   const [rankingMonth, setRankingMonth] = useState(previousMonth);
+  const [rankingTab, setRankingTab] = useState<'samples' | 'workDays'>('samples');
   const [rankings, setRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
 
@@ -1320,63 +1479,6 @@ export default function App() {
       type: 'success', 
       message: 'Thiết bị không hỗ trợ chia sẻ trực tiếp. Ảnh đã được tải xuống.' 
     });
-  };
-
-  const renderRankItem = (item: RankingItem, index: number, valueKey: 'samples' | 'workDays', unit: string) => {
-    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
-    const isTop3 = index < 3;
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, delay: index * 0.05 }}
-        key={item.msnv}
-        className={cn(
-          "flex items-center justify-between px-2.5 py-3 sm:p-3.5 rounded-2xl transition-all duration-300",
-          isTop3 
-            ? "bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-500/10 hover:border-indigo-500/20" 
-            : "bg-white/40 dark:bg-slate-900/10 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-800/50"
-        )}
-      >
-        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-          <span className={cn(
-            "w-5 sm:w-6 text-center font-black flex items-center justify-center flex-shrink-0 text-[16px] sm:text-[18px]",
-            isTop3 ? "text-indigo-500" : "text-slate-400"
-          )}>
-            {medal ? medal : `${index + 1}`}
-          </span>
-          <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
-            <span className="text-[12px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
-              {item.name}
-            </span>
-          </div>
-        </div>
-        <div className="text-right flex-shrink-0 ml-1.5 sm:ml-2">
-          <div className={cn(
-            "rounded-xl sm:rounded-full font-black transition-all",
-            "px-2 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border",
-            isTop3 
-              ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" 
-              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50"
-          )}>
-            {valueKey === 'samples' ? (
-              <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
-                <span>{item.samples}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">mẫu</span>
-                <span className="text-slate-300 dark:text-slate-700 mx-0.5">/</span>
-                <span>{item.workDays}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">ngày</span>
-              </span>
-            ) : (
-              <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
-                <span>{item[valueKey]}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{unit}</span>
-              </span>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    );
   };
 
   const padNum = (num: number) => String(num).padStart(2, '0');
@@ -2116,64 +2218,65 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Panel 1: Xếp hạng số mẫu */}
-              <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
-                <h4 
-                  className="text-[1.1rem] font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2"
-                  style={{ textShadow: "0 0 10px rgba(99,102,241,0.35), 0 0 20px rgba(99,102,241,0.20)" }}
+            {/* Ranking board: tabs Số mẫu / Ngày làm, một bảng duy nhất */}
+            <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
+              <div className="flex bg-slate-200/70 dark:bg-slate-800/60 rounded-2xl p-1 gap-1">
+                <button
+                  onClick={() => setRankingTab('samples')}
+                  className={cn(
+                    "flex-1 rounded-xl py-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer",
+                    rankingTab === 'samples'
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  )}
                 >
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></span>
-                  </span>
-                  Xếp hạng số mẫu
-                </h4>
-
-                {isLoadingRankings ? (
-                  <RankingSkeleton />
-                ) : rankings.length === 0 ? (
-                  <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    Chưa có dữ liệu tháng được chọn
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {(() => {
-                      const sorted = [...rankings].sort((a, b) => b.samples - a.samples);
-                      return sorted.map((item, index) => renderRankItem(item, index, 'samples', 'mẫu'));
-                    })()}
-                  </div>
-                )}
+                  Số mẫu
+                </button>
+                <button
+                  onClick={() => setRankingTab('workDays')}
+                  className={cn(
+                    "flex-1 rounded-xl py-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer",
+                    rankingTab === 'workDays'
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  )}
+                >
+                  Ngày làm
+                </button>
               </div>
 
-              {/* Panel 2: Xếp hạng ngày làm */}
-              <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
-                <h4 
-                  className="text-[1.1rem] font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2"
-                  style={{ textShadow: "0 0 10px rgba(16,185,129,0.35), 0 0 20px rgba(16,185,129,0.20)" }}
-                >
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                  </span>
-                  Xếp hạng ngày làm
-                </h4>
-
-                {isLoadingRankings ? (
-                  <RankingSkeleton />
-                ) : rankings.length === 0 ? (
-                  <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    Chưa có dữ liệu tháng được chọn
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {(() => {
-                      const sorted = [...rankings].sort((a, b) => b.workDays - a.workDays);
-                      return sorted.map((item, index) => renderRankItem(item, index, 'workDays', 'ngày'));
-                    })()}
-                  </div>
-                )}
-              </div>
+              {isLoadingRankings ? (
+                <RankingSkeleton />
+              ) : rankings.length === 0 ? (
+                <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
+                  Chưa có dữ liệu tháng được chọn
+                </div>
+              ) : (
+                (() => {
+                  // Logic sort giữ nguyên như cũ, không thay đổi
+                  const sorted = rankingTab === 'samples'
+                    ? [...rankings].sort((a, b) => b.samples - a.samples)
+                    : [...rankings].sort((a, b) => b.workDays - a.workDays);
+                  const top3 = sorted.slice(0, 3);
+                  const rest = sorted.slice(3);
+                  return (
+                    <>
+                      {top3.length > 0 && (
+                        <div className="flex gap-2 items-end">
+                          {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} />}
+                          {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} />}
+                          {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} />}
+                        </div>
+                      )}
+                      <div className="space-y-2.5">
+                        {rest.map((item, i) => (
+                          <RankRow key={item.msnv} item={item} index={i + 3} mode={rankingTab} />
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()
+              )}
             </div>
           </div>
 
