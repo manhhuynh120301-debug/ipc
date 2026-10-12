@@ -386,26 +386,36 @@ const getPreviousMonthInput = (yyyyMm: string) => {
 const PODIUM_STYLES = [
   {
     // Top 1: gold, tallest card, crown
-    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] bg-gradient-to-b from-amber-500/[0.15] to-slate-50/60 min-h-[190px] sm:min-h-[198px]",
+    // (gradient viết bằng inline style để tương thích cả Safari đời cũ)
+    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] min-h-[190px] sm:min-h-[198px]",
+    cardBg: "linear-gradient(180deg, rgba(245,158,11,0.15), rgba(248,250,252,0.6))",
     name: "text-amber-600",
     numColor: "#d97706",
-    avatar: "from-amber-500 to-red-500 w-9 h-9 text-xs sm:w-12 sm:h-12 sm:text-[15px]",
+    avatar: "w-9 h-9 text-xs sm:w-12 sm:h-12 sm:text-[15px]",
+    avatarBg: "linear-gradient(135deg, #f59e0b, #ef4444)",
+    avatarFallback: "#f59e0b",
     badge: "bg-amber-500",
   },
   {
     // Top 2: blue
-    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] bg-gradient-to-b from-blue-500/[0.14] to-slate-50/60 min-h-[168px] sm:min-h-[176px]",
+    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] min-h-[168px] sm:min-h-[176px]",
+    cardBg: "linear-gradient(180deg, rgba(59,130,246,0.14), rgba(248,250,252,0.6))",
     name: "text-blue-500",
     numColor: "#3b82f6",
-    avatar: "from-cyan-500 to-blue-600 w-8 h-8 text-[11px] sm:w-[42px] sm:h-[42px] sm:text-[13px]",
+    avatar: "w-8 h-8 text-[11px] sm:w-[42px] sm:h-[42px] sm:text-[13px]",
+    avatarBg: "linear-gradient(135deg, #06b6d4, #3b82f6)",
+    avatarFallback: "#0ea5e9",
     badge: "bg-blue-500",
   },
   {
     // Top 3: green, lowest card
-    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] bg-gradient-to-b from-emerald-500/[0.13] to-slate-50/60 min-h-[146px] sm:min-h-[156px]",
+    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] min-h-[146px] sm:min-h-[156px]",
+    cardBg: "linear-gradient(180deg, rgba(16,185,129,0.13), rgba(248,250,252,0.6))",
     name: "text-emerald-600",
     numColor: "#059669",
-    avatar: "from-emerald-500 to-emerald-700 w-8 h-8 text-[11px] sm:w-[38px] sm:h-[38px] sm:text-xs",
+    avatar: "w-8 h-8 text-[11px] sm:w-[38px] sm:h-[38px] sm:text-xs",
+    avatarBg: "linear-gradient(135deg, #10b981, #059669)",
+    avatarFallback: "#10b981",
     badge: "bg-emerald-500",
   },
 ] as const;
@@ -505,6 +515,7 @@ const PodiumCard = ({
         "group flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-2xl border px-0.5 sm:px-1 py-2 sm:py-2.5 cursor-pointer transition-[border-color,box-shadow] duration-300",
         s.card
       )}
+      style={{ backgroundImage: s.cardBg }}
     >
       {rank === 0 ? (
         <svg
@@ -519,7 +530,10 @@ const PodiumCard = ({
           {rank + 1}
         </span>
       )}
-      <div className={cn("rounded-full flex items-center justify-center text-white font-extrabold bg-gradient-to-br shadow-md mb-1.5 transition-transform duration-300 group-hover:scale-110", s.avatar)}>
+      <div
+        className={cn("rounded-full flex items-center justify-center text-white font-extrabold shadow-md mb-1.5 transition-transform duration-300 group-hover:scale-110", s.avatar)}
+        style={{ backgroundColor: s.avatarFallback, backgroundImage: s.avatarBg }}
+      >
         {getInitials(item.name)}
       </div>
       <div className="w-full min-h-[24px] sm:min-h-[28px] flex items-start justify-center px-0.5">
