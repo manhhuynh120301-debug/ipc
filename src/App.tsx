@@ -636,7 +636,7 @@ export default function App() {
     forgotDays: number;
   }
 
-  const [rankingMonth, setRankingMonth] = useState(currentMonth);
+  const [rankingMonth, setRankingMonth] = useState(previousMonth);
   const [rankings, setRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
 
@@ -2104,7 +2104,7 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto max-w-full min-w-0 overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng hiện tại</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng Thống Kê</span>
                 <div className="relative w-full sm:w-auto max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
                   <input 
                     type="month" 
