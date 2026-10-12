@@ -345,20 +345,6 @@ const StatCard = ({
   );
 };
 
-const RankingSkeleton = () => (
-  <div className="space-y-3">
-    {[1, 2, 3, 4, 5].map((i) => (
-      <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/40 dark:bg-slate-900/40 border border-transparent animate-pulse animate-duration-1000">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800" />
-          <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-        </div>
-        <div className="w-16 h-6 bg-slate-200 dark:bg-slate-800 rounded-full" />
-      </div>
-    ))}
-  </div>
-);
-
 // --- Ranking UI: podium top 1-3 + rows top 4+ ---
 // Ranking logic:
 // - "Số mẫu" board sorts by productivity = samples / workDays (descending),
@@ -642,6 +628,11 @@ const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 
   if (data.length < 2) {
     return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
   }
+  const first = data[0];
+  const lastPt = data[data.length - 1];
+  if (!first || !lastPt) {
+    return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
+  }
   const val = (d: HistoryPoint) => (mode === 'samples' ? d.samples : d.workDays);
   const W = 360, H = 200, P = { l: 14, r: 14, t: 26, b: 30 };
   const vals = data.map(val);
@@ -650,14 +641,14 @@ const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 
   const lo = min - span, hi = max + span;
   const X = (i: number) => P.l + (i * (W - P.l - P.r)) / (data.length - 1);
   const Y = (v: number) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
-  let path = `M ${X(0)},${Y(val(data[0]))}`;
+  let path = `M ${X(0)},${Y(val(first))}`;
   for (let i = 1; i < data.length; i++) {
     const x0 = X(i - 1), y0 = Y(val(data[i - 1]));
     const x1 = X(i), y1 = Y(val(data[i])), mx = (x0 + x1) / 2;
     path += ` C ${mx},${y0} ${mx},${y1} ${x1},${y1}`;
   }
   const area = `${P.l},${H - P.b} ` + data.map((d, i) => `${X(i)},${Y(val(d))}`).join(' ') + ` ${W - P.r},${H - P.b}`;
-  const lastX = X(data.length - 1), lastY = Y(val(data[data.length - 1]));
+  const lastX = X(data.length - 1), lastY = Y(val(lastPt));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       <defs>
@@ -1398,7 +1389,7 @@ export default function App() {
     months.forEach((m) => {
       const found = (historyMonthsCache.current.get(m) || []).find((r) => r.msnv === item.msnv);
       if (!found) return;
-      const mm = m.split('-')[1];
+      const mm = m.split('-')[1] ?? '01';
       data.push({
         key: m,
         label: toMonthYear(m),
@@ -2623,7 +2614,7 @@ export default function App() {
               </div>
 
               {isLoadingRankings ? (
-                <RankingSkeleton />
+                <BotLoader text="Đang tải bảng xếp hạng..." />
               ) : rankings.length === 0 ? (
                 <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
                   Chưa có dữ liệu tháng được chọn
