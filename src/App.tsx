@@ -373,7 +373,7 @@ const getInitials = (name: string) => {
 const PODIUM_STYLES = [
   {
     // Top 1: gold, tallest card, crown
-    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] bg-gradient-to-b from-amber-500/[0.15] to-slate-50/60 min-h-[148px] sm:min-h-[172px]",
+    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] bg-gradient-to-b from-amber-500/[0.15] to-slate-50/60 min-h-[190px] sm:min-h-[198px]",
     name: "text-amber-600",
     numColor: "#d97706",
     avatar: "from-amber-500 to-red-500 w-9 h-9 text-xs sm:w-12 sm:h-12 sm:text-[15px]",
@@ -381,7 +381,7 @@ const PODIUM_STYLES = [
   },
   {
     // Top 2: blue
-    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] bg-gradient-to-b from-blue-500/[0.14] to-slate-50/60 min-h-[130px] sm:min-h-[152px]",
+    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] bg-gradient-to-b from-blue-500/[0.14] to-slate-50/60 min-h-[168px] sm:min-h-[176px]",
     name: "text-blue-500",
     numColor: "#3b82f6",
     avatar: "from-cyan-500 to-blue-600 w-8 h-8 text-[11px] sm:w-[42px] sm:h-[42px] sm:text-[13px]",
@@ -389,7 +389,7 @@ const PODIUM_STYLES = [
   },
   {
     // Top 3: green, lowest card
-    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] bg-gradient-to-b from-emerald-500/[0.13] to-slate-50/60 min-h-[116px] sm:min-h-[136px]",
+    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] bg-gradient-to-b from-emerald-500/[0.13] to-slate-50/60 min-h-[146px] sm:min-h-[156px]",
     name: "text-emerald-600",
     numColor: "#059669",
     avatar: "from-emerald-500 to-emerald-700 w-8 h-8 text-[11px] sm:w-[38px] sm:h-[38px] sm:text-xs",
