@@ -373,26 +373,26 @@ const getInitials = (name: string) => {
 const PODIUM_STYLES = [
   {
     // Top 1: gold, tallest card, crown
-    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] bg-gradient-to-b from-amber-500/[0.15] to-slate-50/60 min-h-[172px]",
+    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] bg-gradient-to-b from-amber-500/[0.15] to-slate-50/60 min-h-[148px] sm:min-h-[172px]",
     name: "text-amber-600",
     numColor: "#d97706",
-    avatar: "from-amber-500 to-red-500 w-12 h-12 text-[15px]",
+    avatar: "from-amber-500 to-red-500 w-9 h-9 text-xs sm:w-12 sm:h-12 sm:text-[15px]",
     badge: "bg-amber-500",
   },
   {
     // Top 2: blue
-    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] bg-gradient-to-b from-blue-500/[0.14] to-slate-50/60 min-h-[152px]",
+    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] bg-gradient-to-b from-blue-500/[0.14] to-slate-50/60 min-h-[130px] sm:min-h-[152px]",
     name: "text-blue-500",
     numColor: "#3b82f6",
-    avatar: "from-cyan-500 to-blue-600 w-[42px] h-[42px] text-[13px]",
+    avatar: "from-cyan-500 to-blue-600 w-8 h-8 text-[11px] sm:w-[42px] sm:h-[42px] sm:text-[13px]",
     badge: "bg-blue-500",
   },
   {
     // Top 3: green, lowest card
-    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] bg-gradient-to-b from-emerald-500/[0.13] to-slate-50/60 min-h-[136px]",
+    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] bg-gradient-to-b from-emerald-500/[0.13] to-slate-50/60 min-h-[116px] sm:min-h-[136px]",
     name: "text-emerald-600",
     numColor: "#059669",
-    avatar: "from-emerald-500 to-emerald-700 w-[38px] h-[38px] text-xs",
+    avatar: "from-emerald-500 to-emerald-700 w-8 h-8 text-[11px] sm:w-[38px] sm:h-[38px] sm:text-xs",
     badge: "bg-emerald-500",
   },
 ] as const;
@@ -402,27 +402,43 @@ const StatPill = ({
   mode,
   numColor,
   className,
+  variant = 'row',
 }: {
   item: RankingItem;
   mode: 'samples' | 'workDays';
   numColor?: string;
   className?: string;
+  variant?: 'podium' | 'row';
 }) => {
   const numStyle = numColor ? { color: numColor } : undefined;
+  const isPodium = variant === 'podium';
+  const unitClass = isPodium ? "text-[9px] sm:text-[11px]" : "text-[11px]";
   return (
-    <span className={cn("rounded-xl sm:rounded-full font-black px-2 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border", className)}>
+    <span className={cn(
+      "rounded-xl sm:rounded-full font-black text-center flex items-center justify-center border",
+      isPodium ? "px-1.5 sm:px-3 py-1 max-w-full" : "px-2 py-1 sm:py-1 sm:px-3",
+      className
+    )}>
       {mode === 'samples' ? (
-        <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
-          <span style={numStyle}>{item.samples}</span>
-          <span className="text-[11px] font-semibold text-slate-400">mẫu</span>
-          <span className="text-slate-300 mx-0.5">/</span>
-          <span style={numStyle}>{item.workDays}</span>
-          <span className="text-[11px] font-semibold text-slate-400">ngày</span>
+        <span className={cn(
+          "whitespace-nowrap flex items-center leading-tight",
+          // Trên điện thoại: xếp 2 dòng cho gọn, màn hình lớn trở lại 1 dòng
+          isPodium ? "flex-col sm:flex-row text-[11px] sm:text-sm" : "gap-0.5 text-[13px] sm:text-sm"
+        )}>
+          <span className="flex items-center gap-0.5">
+            <span style={numStyle}>{item.samples}</span>
+            <span className={cn("font-semibold text-slate-400", unitClass)}>mẫu</span>
+          </span>
+          <span className={cn("text-slate-300 mx-0.5", isPodium && "hidden sm:inline")}>/</span>
+          <span className="flex items-center gap-0.5">
+            <span style={numStyle}>{item.workDays}</span>
+            <span className={cn("font-semibold text-slate-400", unitClass)}>ngày</span>
+          </span>
         </span>
       ) : (
-        <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
+        <span className={cn("whitespace-nowrap flex items-center gap-0.5", isPodium ? "text-[11px] sm:text-sm" : "text-[13px] sm:text-sm")}>
           <span style={numStyle}>{item.workDays}</span>
-          <span className="text-[11px] font-semibold text-slate-400">ngày</span>
+          <span className={cn("font-semibold text-slate-400", unitClass)}>ngày</span>
         </span>
       )}
     </span>
@@ -446,7 +462,7 @@ const PodiumCard = ({
       transition={{ duration: 0.5, delay: rank === 0 ? 0 : rank === 1 ? 0.05 : 0.1 }}
       whileHover={{ y: -6, scale: 1.03 }}
       className={cn(
-        "group flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-2xl border px-1 py-2.5 cursor-pointer transition-[border-color,box-shadow] duration-300",
+        "group flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-2xl border px-0.5 sm:px-1 py-2 sm:py-2.5 cursor-pointer transition-[border-color,box-shadow] duration-300",
         s.card
       )}
     >
@@ -466,14 +482,20 @@ const PodiumCard = ({
       <div className={cn("rounded-full flex items-center justify-center text-white font-extrabold bg-gradient-to-br shadow-md mb-1.5 transition-transform duration-300 group-hover:scale-110", s.avatar)}>
         {getInitials(item.name)}
       </div>
-      <div className={cn("text-[10.5px] font-extrabold truncate max-w-full px-0.5", s.name)}>
-        {item.name}
+      <div className="w-full min-h-[24px] sm:min-h-[28px] flex items-start justify-center px-0.5">
+        <span
+          className={cn("text-[9px] sm:text-[10.5px] font-extrabold leading-tight break-words text-center", s.name)}
+          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+        >
+          {item.name}
+        </span>
       </div>
       <StatPill
         item={item}
         mode={mode}
+        variant="podium"
         numColor={s.numColor}
-        className="mt-1.5 bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
+        className="mt-1 bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
       />
     </motion.div>
   );
@@ -2207,7 +2229,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto max-w-full min-w-0 overflow-hidden">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng Thống Kê</span>
-                <div className="relative w-full sm:w-auto max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
+                <div className="relative flex-1 sm:flex-none sm:w-auto min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
                   <input 
                     type="month" 
                     value={rankingMonth}
@@ -2262,7 +2284,7 @@ export default function App() {
                   return (
                     <>
                       {top3.length > 0 && (
-                        <div className="flex gap-2 items-end">
+                        <div className="flex gap-1.5 sm:gap-2 items-end">
                           {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} />}
                           {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} />}
                           {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} />}
