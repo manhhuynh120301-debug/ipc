@@ -614,25 +614,26 @@ interface HistoryPoint {
   workDays: number;
 }
 
-const HistoryChart = ({ data }: { data: HistoryPoint[] }) => {
+const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 'workDays' }) => {
   if (data.length < 2) {
     return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
   }
+  const val = (d: HistoryPoint) => (mode === 'samples' ? d.samples : d.workDays);
   const W = 360, H = 200, P = { l: 14, r: 14, t: 26, b: 30 };
-  const vals = data.map((d) => d.samples);
+  const vals = data.map(val);
   const min = Math.min(...vals), max = Math.max(...vals);
   const span = (max - min) * 0.25 || 1;
   const lo = min - span, hi = max + span;
   const X = (i: number) => P.l + (i * (W - P.l - P.r)) / (data.length - 1);
   const Y = (v: number) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
-  let path = `M ${X(0)},${Y(data[0].samples)}`;
+  let path = `M ${X(0)},${Y(val(data[0]))}`;
   for (let i = 1; i < data.length; i++) {
-    const x0 = X(i - 1), y0 = Y(data[i - 1].samples);
-    const x1 = X(i), y1 = Y(data[i].samples), mx = (x0 + x1) / 2;
+    const x0 = X(i - 1), y0 = Y(val(data[i - 1]));
+    const x1 = X(i), y1 = Y(val(data[i])), mx = (x0 + x1) / 2;
     path += ` C ${mx},${y0} ${mx},${y1} ${x1},${y1}`;
   }
-  const area = `${P.l},${H - P.b} ` + data.map((d, i) => `${X(i)},${Y(d.samples)}`).join(' ') + ` ${W - P.r},${H - P.b}`;
-  const lastX = X(data.length - 1), lastY = Y(data[data.length - 1].samples);
+  const area = `${P.l},${H - P.b} ` + data.map((d, i) => `${X(i)},${Y(val(d))}`).join(' ') + ` ${W - P.r},${H - P.b}`;
+  const lastX = X(data.length - 1), lastY = Y(val(data[data.length - 1]));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       <defs>
@@ -650,8 +651,8 @@ const HistoryChart = ({ data }: { data: HistoryPoint[] }) => {
       <circle cx={lastX} cy={lastY} r={9} fill="#6366f1" opacity={0.18} />
       {data.map((d, i) => (
         <g key={d.key}>
-          <circle cx={X(i)} cy={Y(d.samples)} r={4.5} fill="#fff" stroke="#6366f1" strokeWidth={2.5} />
-          <text x={X(i)} y={Y(d.samples) - 11} textAnchor="middle" fontSize={10.5} fontWeight={800} fill="#475569">{d.samples}</text>
+          <circle cx={X(i)} cy={Y(val(d))} r={4.5} fill="#fff" stroke="#6366f1" strokeWidth={2.5} />
+          <text x={X(i)} y={Y(val(d)) - 11} textAnchor="middle" fontSize={10.5} fontWeight={800} fill="#475569">{val(d)}</text>
           <text x={X(i)} y={H - 10} textAnchor="middle" fontSize={10.5} fontWeight={700} fill="#94a3b8">{d.shortLabel}</text>
         </g>
       ))}
@@ -663,28 +664,32 @@ const HistorySheet = ({
   item,
   data,
   loading,
+  mode,
   onClose,
 }: {
   item: RankingItem;
   data: HistoryPoint[];
   loading: boolean;
+  mode: 'samples' | 'workDays';
   onClose: () => void;
 }) => {
-  const total = data.reduce((s, d) => s + d.samples, 0);
+  const val = (d: HistoryPoint) => (mode === 'samples' ? d.samples : d.workDays);
+  const unit = mode === 'samples' ? 'mẫu' : 'ngày';
+  const total = data.reduce((s, d) => s + val(d), 0);
   const avg = data.length ? Math.round(total / data.length) : 0;
   const best: HistoryPoint | null = data.reduce<HistoryPoint | null>(
-    (b, d) => (d.samples > (b?.samples ?? -1) ? d : b),
+    (b, d) => (val(d) > (b ? val(b) : -1) ? d : b),
     null
   );
   const last = data[data.length - 1];
   const prev = data[data.length - 2];
-  const trend = last && prev && prev.samples > 0
-    ? Math.round(((last.samples - prev.samples) / prev.samples) * 100)
+  const trend = last && prev && val(prev) > 0
+    ? Math.round(((val(last) - val(prev)) / val(prev)) * 100)
     : null;
   const stats = [
     { v: total.toLocaleString('vi-VN'), l: `Tổng ${data.length} tháng` },
     { v: avg.toLocaleString('vi-VN'), l: 'Trung bình' },
-    { v: best ? best.samples.toLocaleString('vi-VN') : '—', l: best ? `Cao nhất · ${best.shortLabel}` : 'Cao nhất' },
+    { v: best ? val(best).toLocaleString('vi-VN') : '—', l: best ? `Cao nhất · ${best.shortLabel}` : 'Cao nhất' },
   ];
   return (
     <motion.div
@@ -737,13 +742,13 @@ const HistorySheet = ({
             <div className="flex gap-2 mt-3.5">
               {stats.map((s) => (
                 <div key={s.l} className="flex-1 bg-slate-50 border border-slate-100 rounded-[14px] px-1.5 py-2.5 text-center">
-                  <div className="text-[15px] font-extrabold text-slate-900">{s.v} <small className="text-[10px] font-semibold text-slate-400">mẫu</small></div>
+                  <div className="text-[15px] font-extrabold text-slate-900">{s.v} <small className="text-[10px] font-semibold text-slate-400">{unit}</small></div>
                   <div className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-[3px]">{s.l}</div>
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-between mt-3.5 mb-1.5 px-0.5">
-              <span className="text-xs font-extrabold text-slate-700">Số mẫu theo tháng</span>
+              <span className="text-xs font-extrabold text-slate-700">{mode === 'samples' ? 'Số mẫu theo tháng' : 'Ngày làm theo tháng'}</span>
               {trend !== null && prev && (
                 <span className={cn(
                   "inline-flex items-center gap-1 text-[10.5px] font-bold px-2.5 py-[3px] rounded-full border",
@@ -755,7 +760,7 @@ const HistorySheet = ({
               )}
             </div>
             <div className="bg-slate-50 border border-slate-100 rounded-[18px] px-2 pt-3 pb-1.5">
-              <HistoryChart data={data} />
+              <HistoryChart data={data} mode={mode} />
             </div>
           </>
         )}
@@ -2616,6 +2621,7 @@ export default function App() {
             item={historyItem}
             data={historyData}
             loading={isLoadingHistory}
+            mode={rankingTab}
             onClose={closeHistory}
           />
         )}
