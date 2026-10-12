@@ -981,6 +981,15 @@ function GuideBot() {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
 
+    // Tự ẩn bot khi bàn phím mở (focus vào ô nhập), hiện lại khi đóng
+    const isTextField = (el: Element | null) => !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+    const onFocusIn = (e: FocusEvent) => { if (isTextField(e.target as Element | null)) { guide.classList.add('guide-hidden'); hideBubble(); } };
+    const onFocusOut = () => {
+      window.setTimeout(() => { if (!isTextField(document.activeElement)) guide.classList.remove('guide-hidden'); }, 50);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+
     const clearSpot = () => document.querySelectorAll('.guide-spot').forEach(e => e.classList.remove('guide-spot'));
     const showStep = (i: number) => {
       clearSpot();
@@ -1018,11 +1027,13 @@ function GuideBot() {
         dim.classList.add('show');
         tourbar.classList.add('show');
         showStep(0);
-      }, 7600);
+      }, 5600);
     };
 
     return () => {
       window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
       clearT(qtimer); clearT(scrollTimer); clearT(dwellTimer);
       clearSpot();
     };
@@ -1031,7 +1042,8 @@ function GuideBot() {
   return (
     <div ref={rootRef}>
       <style>{`
-.guide-fab{position:fixed;right:14px;bottom:16px;z-index:70}
+.guide-fab{position:fixed;right:14px;bottom:16px;z-index:70;transition:opacity .25s,transform .25s}
+.guide-fab.guide-hidden{opacity:0;pointer-events:none;transform:translateY(10px)}
 .guide-fab img{height:74px;width:auto;display:block;cursor:pointer}
 .guide-bubble{position:absolute;width:200px;max-width:58vw;background:#fff;padding:10px 12px;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:12.5px;color:#334155;line-height:1.45;display:none;z-index:71}
 .guide-bubble.show{display:block;animation:guidePop .3s ease}
