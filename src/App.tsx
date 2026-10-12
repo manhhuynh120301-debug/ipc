@@ -360,14 +360,27 @@ const RankingSkeleton = () => (
 );
 
 // --- Ranking UI: podium top 1-3 + rows top 4+ ---
-// Sorting logic is intentionally unchanged from the original:
-// - "Số mẫu" board sorts by b.samples - a.samples
-// - "Ngày làm" board sorts by b.workDays - a.workDays
-// No previous-month comparison is shown in the rankings.
+// Ranking logic:
+// - "Số mẫu" board sorts by productivity = samples / workDays (descending),
+//   tie-break by higher samples. This is fairer: fewer work days with the
+//   same samples means higher productivity and ranks higher.
+// - "Ngày làm" board sorts by b.workDays - a.workDays (unchanged), and shows
+//   each person's work-day change vs the previous month as a small chip
+//   with up/down icon (like the report StatCards).
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(/\s+/);
   return parts.slice(-2).map((p) => p.charAt(0)).join('').toUpperCase();
+};
+
+// Năng suất = số mẫu / ngày làm; ngày làm = 0 thì tính bằng 0 để tránh chia cho 0
+const productivity = (item: RankingItem) => (item.workDays > 0 ? item.samples / item.workDays : 0);
+
+// Tháng liền trước của một tháng input yyyy-MM (để so sánh ngày làm với tháng trước)
+const getPreviousMonthInput = (yyyyMm: string) => {
+  const [y, m] = yyyyMm.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
 const PODIUM_STYLES = [
@@ -445,14 +458,41 @@ const StatPill = ({
   );
 };
 
+// Chip chênh lệch ngày làm so với tháng trước (chỉ dùng ở tab Ngày làm)
+const DiffChip = ({ diff }: { diff: number }) => {
+  if (diff > 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
+        <TrendingUp className="w-3 h-3" />
+        +{diff}
+      </span>
+    );
+  }
+  if (diff < 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
+        <TrendingDown className="w-3 h-3" />
+        {diff}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-100 text-amber-500 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
+      ±0
+    </span>
+  );
+};
+
 const PodiumCard = ({
   item,
   rank,
   mode,
+  diff = null,
 }: {
   item: RankingItem;
   rank: 0 | 1 | 2; // 0 = top 1, 1 = top 2, 2 = top 3
   mode: 'samples' | 'workDays';
+  diff?: number | null;
 }) => {
   const s = PODIUM_STYLES[rank];
   return (
@@ -490,13 +530,16 @@ const PodiumCard = ({
           {item.name}
         </span>
       </div>
-      <StatPill
-        item={item}
-        mode={mode}
-        variant="podium"
-        numColor={s.numColor}
-        className="mt-1 bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
-      />
+      <div className="mt-1 flex items-center justify-center gap-1 max-w-full">
+        <StatPill
+          item={item}
+          mode={mode}
+          variant="podium"
+          numColor={s.numColor}
+          className="bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
+        />
+        {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
+      </div>
     </motion.div>
   );
 };
@@ -505,10 +548,12 @@ const RankRow = ({
   item,
   index,
   mode,
+  diff = null,
 }: {
   item: RankingItem;
   index: number; // 0-based overall rank
   mode: 'samples' | 'workDays';
+  diff?: number | null;
 }) => {
   return (
     <motion.div
@@ -528,12 +573,13 @@ const RankRow = ({
           </span>
         </div>
       </div>
-      <div className="text-right flex-shrink-0 ml-1.5 sm:ml-2">
+      <div className="flex-shrink-0 ml-1.5 sm:ml-2 flex items-center justify-end gap-1.5">
         <StatPill
           item={item}
           mode={mode}
           className="bg-slate-100 text-slate-600 border-slate-200/50 transition-all duration-300 group-hover:scale-105 group-hover:bg-white"
         />
+        {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
       </div>
     </motion.div>
   );
@@ -819,6 +865,7 @@ export default function App() {
   const [rankingMonth, setRankingMonth] = useState(previousMonth);
   const [rankingTab, setRankingTab] = useState<'samples' | 'workDays'>('samples');
   const [rankings, setRankings] = useState<RankingItem[]>([]);
+  const [prevRankings, setPrevRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
 
   // Direct Apps Script integration helpers
@@ -1086,8 +1133,13 @@ export default function App() {
     setIsLoadingRankings(true);
     try {
       const formattedMonth = toMonthYear(rankingMonth);
-      const data = await apiGetRankings(formattedMonth);
+      const prevFormattedMonth = toMonthYear(getPreviousMonthInput(rankingMonth));
+      const [data, prevData] = await Promise.all([
+        apiGetRankings(formattedMonth),
+        apiGetRankings(prevFormattedMonth),
+      ]);
       setRankings(data);
+      setPrevRankings(prevData);
     } catch (err) {
       console.error("Error fetching rankings:", err);
     } finally {
@@ -1123,6 +1175,20 @@ export default function App() {
       return notifTime > lastReadTime;
     }).length;
   }, [filteredNotifications, lastReadTime]);
+
+  // Map msnv -> số ngày làm của tháng trước (để so sánh tăng/giảm ở tab Ngày làm)
+  const prevWorkDaysMap = useMemo(() => {
+    const map = new Map<string, number>();
+    prevRankings.forEach((r) => map.set(r.msnv, r.workDays));
+    return map;
+  }, [prevRankings]);
+
+  // Chênh lệch ngày làm so với tháng trước; null = không so sánh (tab Số mẫu hoặc thiếu dữ liệu)
+  const getWorkDayDiff = (item: RankingItem): number | null => {
+    if (rankingTab !== 'workDays') return null;
+    const prev = prevWorkDaysMap.get(item.msnv);
+    return prev === undefined ? null : item.workDays - prev;
+  };
 
   // Load current stats automatically from Sheet
   useEffect(() => {
@@ -2275,9 +2341,11 @@ export default function App() {
                 </div>
               ) : (
                 (() => {
-                  // Logic sort giữ nguyên như cũ, không thay đổi
+                  // Tab Số mẫu: xếp theo năng suất = số mẫu / ngày làm (giảm dần),
+                  // hòa năng suất thì ai nhiều mẫu hơn đứng trên.
+                  // Tab Ngày làm: giữ nguyên xếp theo ngày làm giảm dần.
                   const sorted = rankingTab === 'samples'
-                    ? [...rankings].sort((a, b) => b.samples - a.samples)
+                    ? [...rankings].sort((a, b) => productivity(b) - productivity(a) || b.samples - a.samples)
                     : [...rankings].sort((a, b) => b.workDays - a.workDays);
                   const top3 = sorted.slice(0, 3);
                   const rest = sorted.slice(3);
@@ -2285,14 +2353,14 @@ export default function App() {
                     <>
                       {top3.length > 0 && (
                         <div className="flex gap-1.5 sm:gap-2 items-end">
-                          {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} />}
-                          {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} />}
-                          {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} />}
+                          {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} diff={getWorkDayDiff(top3[1])} />}
+                          {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} diff={getWorkDayDiff(top3[0])} />}
+                          {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} diff={getWorkDayDiff(top3[2])} />}
                         </div>
                       )}
                       <div className="space-y-2.5">
                         {rest.map((item, i) => (
-                          <RankRow key={item.msnv} item={item} index={i + 3} mode={rankingTab} />
+                          <RankRow key={item.msnv} item={item} index={i + 3} mode={rankingTab} diff={getWorkDayDiff(item)} />
                         ))}
                       </div>
                     </>
