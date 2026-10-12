@@ -614,6 +614,30 @@ interface HistoryPoint {
   workDays: number;
 }
 
+// Bot cute hiện lúc chờ tải dữ liệu (ảnh 3D + animation CSS nhẹ)
+const BOT_IMG = "data:image/jpeg;base64,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";
+
+const BotLoader = ({ text = 'Đang tổng hợp dữ liệu...' }: { text?: string }) => (
+  <div className="py-8 flex flex-col items-center justify-center gap-3">
+    <style>{`
+      @keyframes bot-float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-9px) scale(1.03); } }
+      @keyframes dot-typing { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
+      .bot-float { animation: bot-float 1.8s ease-in-out infinite; }
+      .dot-typing span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #6366f1; margin: 0 2px; animation: dot-typing 1.2s ease-in-out infinite; }
+      .dot-typing span:nth-child(2) { animation-delay: .15s; }
+      .dot-typing span:nth-child(3) { animation-delay: .3s; }
+    `}</style>
+    <img
+      src={BOT_IMG}
+      alt="Đang tải"
+      className="w-24 h-24 rounded-full object-cover bot-float shadow-[0_10px_25px_rgba(99,102,241,0.35)]"
+      draggable={false}
+    />
+    <div className="text-xs font-bold text-slate-500">{text}</div>
+    <div className="dot-typing"><span /><span /><span /></div>
+  </div>
+);
+
 const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 'workDays' }) => {
   if (data.length < 2) {
     return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
@@ -729,14 +753,7 @@ const HistorySheet = ({
         </div>
 
         {loading ? (
-          <div className="mt-4 space-y-2.5">
-            <div className="flex gap-2">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="flex-1 h-[62px] rounded-[14px] bg-slate-100 animate-pulse" />
-              ))}
-            </div>
-            <div className="h-[190px] rounded-[18px] bg-slate-100 animate-pulse" />
-          </div>
+          <BotLoader />
         ) : (
           <>
             <div className="flex gap-2 mt-3.5">
@@ -1055,7 +1072,8 @@ export default function App() {
   const [historyItem, setHistoryItem] = useState<RankingItem | null>(null);
   const [historyData, setHistoryData] = useState<HistoryPoint[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const historyCache = useRef(new Map<string, HistoryPoint[]>());
+  // Cache số liệu từng tháng (key "2026-09"): tải trước ngầm để bấm tên là hiện ngay
+  const historyMonthsCache = useRef(new Map<string, RankingItem[]>());
 
   // Direct Apps Script integration helpers
   const APPS_SCRIPT_URL_RAW = (import.meta as any).env.VITE_APPS_SCRIPT_URL || '';
@@ -1329,6 +1347,11 @@ export default function App() {
       ]);
       setRankings(data);
       setPrevRankings(prevData);
+      // Tải trước ngầm 6 tháng gần nhất để bấm vào tên là hiện lịch sử ngay
+      warmHistoryCache([
+        { key: rankingMonth, data },
+        { key: getPreviousMonthInput(rankingMonth), data: prevData },
+      ]);
     } catch (err) {
       console.error("Error fetching rankings:", err);
     } finally {
@@ -1340,45 +1363,79 @@ export default function App() {
     fetchRankings();
   }, [rankingMonth]);
 
-  // Mở bottom sheet lịch sử: lấy số liệu 6 tháng gần nhất (tính đến tháng đang xem)
-  const openHistory = async (item: RankingItem) => {
+  // 6 tháng gần nhất tính đến tháng đang xem (định dạng "2026-09", cũ -> mới)
+  const getHistoryMonths = () => {
+    const months: string[] = [];
+    let cur = rankingMonth;
+    for (let i = 0; i < 6; i++) {
+      months.unshift(cur);
+      cur = getPreviousMonthInput(cur);
+    }
+    return months;
+  };
+
+  // Tải trước ngầm số liệu các tháng (chạy nền, không chặn UI)
+  const warmHistoryCache = (already: Array<{ key: string; data: RankingItem[] }>) => {
+    already.forEach(({ key, data }) => {
+      if (!historyMonthsCache.current.has(key)) historyMonthsCache.current.set(key, data);
+    });
+    const missing = getHistoryMonths().filter((m) => !historyMonthsCache.current.has(m));
+    if (missing.length === 0) return;
+    Promise.all(
+      missing.map((m) =>
+        apiGetRankings(toMonthYear(m))
+          .then((d) => ({ m, d: d as RankingItem[] }))
+          .catch(() => ({ m, d: [] as RankingItem[] }))
+      )
+    )
+      .then((res) => res.forEach(({ m, d }) => historyMonthsCache.current.set(m, d)))
+      .catch(() => {});
+  };
+
+  // Dựng dữ liệu lịch sử 1 nhân viên từ cache tháng
+  const buildHistory = (item: RankingItem, months: string[]): HistoryPoint[] => {
+    const data: HistoryPoint[] = [];
+    months.forEach((m) => {
+      const found = (historyMonthsCache.current.get(m) || []).find((r) => r.msnv === item.msnv);
+      if (!found) return;
+      const mm = m.split('-')[1];
+      data.push({
+        key: m,
+        label: toMonthYear(m),
+        shortLabel: `T${parseInt(mm, 10)}`,
+        samples: found.samples || 0,
+        workDays: found.workDays || 0,
+      });
+    });
+    return data;
+  };
+
+  // Mở bottom sheet lịch sử: ưu tiên cache đã tải trước, bấm là hiện ngay
+  const openHistory = (item: RankingItem) => {
     setHistoryItem(item);
-    const cacheKey = `${item.msnv}|${rankingMonth}`;
-    const cached = historyCache.current.get(cacheKey);
-    if (cached) {
-      setHistoryData(cached);
+    const months = getHistoryMonths();
+    const missing = months.filter((m) => !historyMonthsCache.current.has(m));
+    if (missing.length === 0) {
+      setIsLoadingHistory(false);
+      setHistoryData(buildHistory(item, months));
       return;
     }
+    // Trường hợp hiếm (bấm khi cache nền chưa xong): tải nốt tháng còn thiếu
     setHistoryData([]);
     setIsLoadingHistory(true);
-    try {
-      const months: string[] = [];
-      let cur = rankingMonth;
-      for (let i = 0; i < 6; i++) {
-        months.unshift(cur);
-        cur = getPreviousMonthInput(cur);
-      }
-      const results = await Promise.all(months.map((m) => apiGetRankings(toMonthYear(m))));
-      const data: HistoryPoint[] = [];
-      months.forEach((m, idx) => {
-        const found = (results[idx] as RankingItem[]).find((r) => r.msnv === item.msnv);
-        if (!found) return;
-        const mm = m.split('-')[1];
-        data.push({
-          key: m,
-          label: toMonthYear(m),
-          shortLabel: `T${parseInt(mm, 10)}`,
-          samples: found.samples || 0,
-          workDays: found.workDays || 0,
-        });
-      });
-      historyCache.current.set(cacheKey, data);
-      setHistoryData(data);
-    } catch (err) {
-      console.error("Error fetching history:", err);
-    } finally {
-      setIsLoadingHistory(false);
-    }
+    Promise.all(
+      missing.map((m) =>
+        apiGetRankings(toMonthYear(m))
+          .then((d) => ({ m, d: d as RankingItem[] }))
+          .catch(() => ({ m, d: [] as RankingItem[] }))
+      )
+    )
+      .then((res) => {
+        res.forEach(({ m, d }) => historyMonthsCache.current.set(m, d));
+        setHistoryData(buildHistory(item, months));
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingHistory(false));
   };
 
   const closeHistory = () => setHistoryItem(null);
