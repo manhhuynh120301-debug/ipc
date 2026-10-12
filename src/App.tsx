@@ -464,7 +464,7 @@ const DiffChip = ({ diff }: { diff: number }) => {
     return (
       <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
         <TrendingUp className="w-3 h-3" />
-        +{diff}
+        {diff}
       </span>
     );
   }
@@ -472,13 +472,13 @@ const DiffChip = ({ diff }: { diff: number }) => {
     return (
       <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
         <TrendingDown className="w-3 h-3" />
-        {diff}
+        {Math.abs(diff)}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-100 text-amber-500 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
-      ±0
+    <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-100 text-amber-500 px-1.5 py-0.5 whitespace-nowrap">
+      <Minus className="w-4 h-4" strokeWidth={3} />
     </span>
   );
 };
