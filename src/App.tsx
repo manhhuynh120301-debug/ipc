@@ -632,6 +632,8 @@ const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 
     return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
   }
   const val = (d: HistoryPoint) => (mode === 'samples' ? d.samples : d.workDays);
+  const lineColor = mode === 'workDays' ? '#ec4899' : '#10b981';
+  const areaColor = mode === 'workDays' ? '#f9a8d4' : '#34d399';
   const W = 360, H = 200, P = { l: 14, r: 14, t: 26, b: 30 };
   const vals = data.map(val);
   const min = Math.min(...vals), max = Math.max(...vals);
@@ -639,32 +641,37 @@ const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 
   const lo = min - span, hi = max + span;
   const X = (i: number) => P.l + (i * (W - P.l - P.r)) / (data.length - 1);
   const Y = (v: number) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
-  let path = `M ${X(0)},${Y(val(first))}`;
-  for (let i = 1; i < data.length; i++) {
-    const x0 = X(i - 1), y0 = Y(val(data[i - 1]));
-    const x1 = X(i), y1 = Y(val(data[i])), mx = (x0 + x1) / 2;
-    path += ` C ${mx},${y0} ${mx},${y1} ${x1},${y1}`;
+  // Catmull-Rom -> bezier: đường cong mượt tự nhiên qua các điểm, không gãy khúc
+  const coords: Array<[number, number]> = data.map((d, i) => [X(i), Y(val(d))]);
+  let linePath = `M ${coords[0][0]},${coords[0][1]}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[Math.max(0, i - 1)], p1 = coords[i], p2 = coords[i + 1], p3 = coords[Math.min(coords.length - 1, i + 2)];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    linePath += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
   }
-  const area = `${P.l},${H - P.b} ` + data.map((d, i) => `${X(i)},${Y(val(d))}`).join(' ') + ` ${W - P.r},${H - P.b}`;
+  const baseY = H - P.b;
+  const areaPath = `${linePath} L ${coords[coords.length - 1][0]},${baseY} L ${coords[0][0]},${baseY} Z`;
   const lastX = X(data.length - 1), lastY = Y(val(lastPt));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       <defs>
         <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#6366f1" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#6366f1" stopOpacity="0" />
+          <stop offset="0" stopColor={areaColor} stopOpacity="0.35" />
+          <stop offset="0.55" stopColor={areaColor} stopOpacity="0.12" />
+          <stop offset="1" stopColor={areaColor} stopOpacity="0" />
         </linearGradient>
       </defs>
       {[0.25, 0.5, 0.75].map((f) => {
         const y = P.t + f * (H - P.t - P.b);
         return <line key={f} x1={P.l} y1={y} x2={W - P.r} y2={y} stroke="#e8edf3" strokeWidth={1} strokeDasharray="4 4" />;
       })}
-      <polygon points={area} fill="url(#histArea)" />
-      <path d={path} fill="none" stroke="#6366f1" strokeWidth={2.5} strokeLinecap="round" />
-      <circle cx={lastX} cy={lastY} r={9} fill="#6366f1" opacity={0.18} />
+      <path d={areaPath} fill="url(#histArea)" />
+      <path d={linePath} fill="none" stroke={lineColor} strokeWidth={2} strokeLinecap="round" />
+      <circle cx={lastX} cy={lastY} r={9} fill={lineColor} opacity={0.18} />
       {data.map((d, i) => (
         <g key={d.key}>
-          <circle cx={X(i)} cy={Y(val(d))} r={4.5} fill="#fff" stroke="#6366f1" strokeWidth={2.5} />
+          <circle cx={X(i)} cy={Y(val(d))} r={4} fill="#fff" stroke={lineColor} strokeWidth={2} />
           <text x={X(i)} y={Y(val(d)) - 11} textAnchor="middle" fontSize={10.5} fontWeight={800} fill="#475569">{val(d)}</text>
           <text x={X(i)} y={H - 10} textAnchor="middle" fontSize={10.5} fontWeight={700} fill="#94a3b8">{d.shortLabel}</text>
         </g>
