@@ -498,11 +498,13 @@ const PodiumCard = ({
   rank,
   mode,
   diff = null,
+  onSelect,
 }: {
   item: RankingItem;
   rank: 0 | 1 | 2; // 0 = top 1, 1 = top 2, 2 = top 3
   mode: 'samples' | 'workDays';
   diff?: number | null;
+  onSelect: (item: RankingItem) => void;
 }) => {
   const s = PODIUM_STYLES[rank];
   return (
@@ -511,6 +513,7 @@ const PodiumCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: rank === 0 ? 0 : rank === 1 ? 0.05 : 0.1 }}
       whileHover={{ y: -6, scale: 1.03 }}
+      onClick={() => onSelect(item)}
       className={cn(
         "group flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-2xl border px-0.5 sm:px-1 py-2 sm:py-2.5 cursor-pointer transition-[border-color,box-shadow] duration-300",
         s.card
@@ -563,11 +566,13 @@ const RankRow = ({
   index,
   mode,
   diff = null,
+  onSelect,
 }: {
   item: RankingItem;
   index: number; // 0-based overall rank
   mode: 'samples' | 'workDays';
   diff?: number | null;
+  onSelect: (item: RankingItem) => void;
 }) => {
   return (
     <motion.div
@@ -575,6 +580,7 @@ const RankRow = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.05 }}
       whileHover={{ x: 5 }}
+      onClick={() => onSelect(item)}
       className="group flex items-center justify-between px-2.5 py-3 sm:p-3.5 rounded-2xl bg-white/40 border border-transparent hover:bg-[#fefce8] hover:border-[#fef3c7] hover:shadow-[0_4px_14px_rgba(254,240,138,0.35)] transition-colors duration-300 cursor-pointer"
     >
       <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
@@ -595,6 +601,165 @@ const RankRow = ({
         />
         {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
       </div>
+    </motion.div>
+  );
+};
+
+// Lịch sử 1 nhân viên: bấm vào tên trên bảng xếp hạng -> bottom sheet + biểu đồ đường
+interface HistoryPoint {
+  key: string; // "2026-09"
+  label: string; // "09/2026"
+  shortLabel: string; // "T9"
+  samples: number;
+  workDays: number;
+}
+
+const HistoryChart = ({ data }: { data: HistoryPoint[] }) => {
+  if (data.length < 2) {
+    return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
+  }
+  const W = 360, H = 200, P = { l: 14, r: 14, t: 26, b: 30 };
+  const vals = data.map((d) => d.samples);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) * 0.25 || 1;
+  const lo = min - span, hi = max + span;
+  const X = (i: number) => P.l + (i * (W - P.l - P.r)) / (data.length - 1);
+  const Y = (v: number) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
+  let path = `M ${X(0)},${Y(data[0].samples)}`;
+  for (let i = 1; i < data.length; i++) {
+    const x0 = X(i - 1), y0 = Y(data[i - 1].samples);
+    const x1 = X(i), y1 = Y(data[i].samples), mx = (x0 + x1) / 2;
+    path += ` C ${mx},${y0} ${mx},${y1} ${x1},${y1}`;
+  }
+  const area = `${P.l},${H - P.b} ` + data.map((d, i) => `${X(i)},${Y(d.samples)}`).join(' ') + ` ${W - P.r},${H - P.b}`;
+  const lastX = X(data.length - 1), lastY = Y(data[data.length - 1].samples);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <defs>
+        <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#6366f1" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#6366f1" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0.25, 0.5, 0.75].map((f) => {
+        const y = P.t + f * (H - P.t - P.b);
+        return <line key={f} x1={P.l} y1={y} x2={W - P.r} y2={y} stroke="#e8edf3" strokeWidth={1} strokeDasharray="4 4" />;
+      })}
+      <polygon points={area} fill="url(#histArea)" />
+      <path d={path} fill="none" stroke="#6366f1" strokeWidth={2.5} strokeLinecap="round" />
+      <circle cx={lastX} cy={lastY} r={9} fill="#6366f1" opacity={0.18} />
+      {data.map((d, i) => (
+        <g key={d.key}>
+          <circle cx={X(i)} cy={Y(d.samples)} r={4.5} fill="#fff" stroke="#6366f1" strokeWidth={2.5} />
+          <text x={X(i)} y={Y(d.samples) - 11} textAnchor="middle" fontSize={10.5} fontWeight={800} fill="#475569">{d.samples}</text>
+          <text x={X(i)} y={H - 10} textAnchor="middle" fontSize={10.5} fontWeight={700} fill="#94a3b8">{d.shortLabel}</text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+const HistorySheet = ({
+  item,
+  data,
+  loading,
+  onClose,
+}: {
+  item: RankingItem;
+  data: HistoryPoint[];
+  loading: boolean;
+  onClose: () => void;
+}) => {
+  const total = data.reduce((s, d) => s + d.samples, 0);
+  const avg = data.length ? Math.round(total / data.length) : 0;
+  const best: HistoryPoint | null = data.reduce<HistoryPoint | null>(
+    (b, d) => (d.samples > (b?.samples ?? -1) ? d : b),
+    null
+  );
+  const last = data[data.length - 1];
+  const prev = data[data.length - 2];
+  const trend = last && prev && prev.samples > 0
+    ? Math.round(((last.samples - prev.samples) / prev.samples) * 100)
+    : null;
+  const stats = [
+    { v: total.toLocaleString('vi-VN'), l: `Tổng ${data.length} tháng` },
+    { v: avg.toLocaleString('vi-VN'), l: 'Trung bình' },
+    { v: best ? best.samples.toLocaleString('vi-VN') : '—', l: best ? `Cao nhất · ${best.shortLabel}` : 'Cao nhất' },
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[80] bg-slate-900/55 flex items-end sm:items-center justify-center sm:p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0.4 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white w-full sm:max-w-[430px] rounded-t-[26px] sm:rounded-[26px] px-[18px] pt-2.5 pb-6 max-h-[88vh] overflow-y-auto"
+      >
+        <div className="w-[42px] h-[5px] rounded bg-slate-200 mx-auto mb-3" />
+        <div className="flex items-center gap-3">
+          <div
+            className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white font-extrabold text-[17px] shadow-md flex-shrink-0"
+            style={{ backgroundColor: '#f59e0b', backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
+          >
+            {getInitials(item.name)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[16px] font-extrabold text-slate-900 truncate">{item.name}</div>
+            <div className="text-[11px] text-slate-400 font-semibold mt-0.5">MSNV: {item.msnv}</div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Đóng"
+            className="ml-auto w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="mt-4 space-y-2.5">
+            <div className="flex gap-2">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex-1 h-[62px] rounded-[14px] bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+            <div className="h-[190px] rounded-[18px] bg-slate-100 animate-pulse" />
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2 mt-3.5">
+              {stats.map((s) => (
+                <div key={s.l} className="flex-1 bg-slate-50 border border-slate-100 rounded-[14px] px-1.5 py-2.5 text-center">
+                  <div className="text-[15px] font-extrabold text-slate-900">{s.v} <small className="text-[10px] font-semibold text-slate-400">mẫu</small></div>
+                  <div className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-[3px]">{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between mt-3.5 mb-1.5 px-0.5">
+              <span className="text-xs font-extrabold text-slate-700">Số mẫu theo tháng</span>
+              {trend !== null && prev && (
+                <span className={cn(
+                  "inline-flex items-center gap-1 text-[10.5px] font-bold px-2.5 py-[3px] rounded-full border",
+                  trend >= 0 ? "text-emerald-600 bg-emerald-50 border-emerald-200" : "text-red-600 bg-red-50 border-red-200"
+                )}>
+                  {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {trend >= 0 ? `+${trend}%` : `${trend}%`} so với {prev.shortLabel}
+                </span>
+              )}
+            </div>
+            <div className="bg-slate-50 border border-slate-100 rounded-[18px] px-2 pt-3 pb-1.5">
+              <HistoryChart data={data} />
+            </div>
+          </>
+        )}
+      </motion.div>
     </motion.div>
   );
 };
@@ -881,6 +1046,11 @@ export default function App() {
   const [rankings, setRankings] = useState<RankingItem[]>([]);
   const [prevRankings, setPrevRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
+  // Lịch sử 1 nhân viên: bấm vào tên trên bảng xếp hạng
+  const [historyItem, setHistoryItem] = useState<RankingItem | null>(null);
+  const [historyData, setHistoryData] = useState<HistoryPoint[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const historyCache = useRef(new Map<string, HistoryPoint[]>());
 
   // Direct Apps Script integration helpers
   const APPS_SCRIPT_URL_RAW = (import.meta as any).env.VITE_APPS_SCRIPT_URL || '';
@@ -1164,6 +1334,49 @@ export default function App() {
   useEffect(() => {
     fetchRankings();
   }, [rankingMonth]);
+
+  // Mở bottom sheet lịch sử: lấy số liệu 6 tháng gần nhất (tính đến tháng đang xem)
+  const openHistory = async (item: RankingItem) => {
+    setHistoryItem(item);
+    const cacheKey = `${item.msnv}|${rankingMonth}`;
+    const cached = historyCache.current.get(cacheKey);
+    if (cached) {
+      setHistoryData(cached);
+      return;
+    }
+    setHistoryData([]);
+    setIsLoadingHistory(true);
+    try {
+      const months: string[] = [];
+      let cur = rankingMonth;
+      for (let i = 0; i < 6; i++) {
+        months.unshift(cur);
+        cur = getPreviousMonthInput(cur);
+      }
+      const results = await Promise.all(months.map((m) => apiGetRankings(toMonthYear(m))));
+      const data: HistoryPoint[] = [];
+      months.forEach((m, idx) => {
+        const found = (results[idx] as RankingItem[]).find((r) => r.msnv === item.msnv);
+        if (!found) return;
+        const mm = m.split('-')[1];
+        data.push({
+          key: m,
+          label: toMonthYear(m),
+          shortLabel: `T${parseInt(mm, 10)}`,
+          samples: found.samples || 0,
+          workDays: found.workDays || 0,
+        });
+      });
+      historyCache.current.set(cacheKey, data);
+      setHistoryData(data);
+    } catch (err) {
+      console.error("Error fetching history:", err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const closeHistory = () => setHistoryItem(null);
 
   // Filter and sort notifications based on the current month's cycle (REAL current date only)
   const filteredNotifications = useMemo(() => {
@@ -2367,14 +2580,14 @@ export default function App() {
                     <>
                       {top3.length > 0 && (
                         <div className="flex gap-1.5 sm:gap-2 items-end">
-                          {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} diff={getWorkDayDiff(top3[1])} />}
-                          {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} diff={getWorkDayDiff(top3[0])} />}
-                          {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} diff={getWorkDayDiff(top3[2])} />}
+                          {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} diff={getWorkDayDiff(top3[1])} onSelect={openHistory} />}
+                          {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} diff={getWorkDayDiff(top3[0])} onSelect={openHistory} />}
+                          {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} diff={getWorkDayDiff(top3[2])} onSelect={openHistory} />}
                         </div>
                       )}
                       <div className="space-y-2.5">
                         {rest.map((item, i) => (
-                          <RankRow key={item.msnv} item={item} index={i + 3} mode={rankingTab} diff={getWorkDayDiff(item)} />
+                          <RankRow key={item.msnv} item={item} index={i + 3} mode={rankingTab} diff={getWorkDayDiff(item)} onSelect={openHistory} />
                         ))}
                       </div>
                     </>
@@ -2395,6 +2608,18 @@ export default function App() {
           }}
         />
       </main>
+
+      {/* Bottom sheet: lịch sử số mẫu 1 nhân viên (bấm vào tên trên bảng xếp hạng) */}
+      <AnimatePresence>
+        {historyItem && (
+          <HistorySheet
+            item={historyItem}
+            data={historyData}
+            loading={isLoadingHistory}
+            onClose={closeHistory}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Off-screen Export Containers */}
       <div 
