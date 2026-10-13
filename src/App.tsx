@@ -2521,7 +2521,7 @@ export default function App() {
                       type="number" 
                       readOnly
                       value={prevStats?.samples ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -2530,7 +2530,7 @@ export default function App() {
                       type="number" 
                       readOnly
                       value={prevStats?.workDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                 </div>
@@ -2542,7 +2542,7 @@ export default function App() {
                       type="number" 
                       readOnly
                       value={prevStats?.lateDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -2551,7 +2551,7 @@ export default function App() {
                       type="number" 
                       readOnly
                       value={prevStats?.forgotDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
                   </div>
                 </div>
