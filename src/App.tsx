@@ -990,6 +990,49 @@ function GuideBot() {
     document.addEventListener('focusin', onFocusIn);
     document.addEventListener('focusout', onFocusOut);
 
+    // Kéo thả bot: nhấn giữ rồi kéo để di chuyển, thả ra là ở yên (nhớ vị trí cho lần sau)
+    let suppressClick = false;
+    let dragSt: { sx: number; sy: number; fx: number; fy: number; dragging: boolean } | null = null;
+    const applyPos = (x: number, y: number) => {
+      const w = guide.offsetWidth, h = guide.offsetHeight;
+      const cx = Math.min(Math.max(x, 8), window.innerWidth - w - 8);
+      const cy = Math.min(Math.max(y, 8), window.innerHeight - h - 8);
+      guide.style.left = cx + 'px';
+      guide.style.top = cy + 'px';
+      guide.style.right = 'auto';
+      guide.style.bottom = 'auto';
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem('bcipc_guide_pos') || 'null');
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') applyPos(saved.x, saved.y);
+    } catch {}
+    const onPointerDown = (e: PointerEvent) => {
+      const r = guide.getBoundingClientRect();
+      dragSt = { sx: e.clientX, sy: e.clientY, fx: r.left, fy: r.top, dragging: false };
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp, { once: true });
+      window.addEventListener('pointercancel', onPointerUp, { once: true });
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragSt) return;
+      const dx = e.clientX - dragSt.sx, dy = e.clientY - dragSt.sy;
+      if (!dragSt.dragging && Math.hypot(dx, dy) > 8) { dragSt.dragging = true; hideBubble(); }
+      if (dragSt.dragging) applyPos(dragSt.fx + dx, dragSt.fy + dy);
+    };
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      if (!dragSt) return;
+      const wasDragging = dragSt.dragging;
+      dragSt = null;
+      if (wasDragging) {
+        const r = guide.getBoundingClientRect();
+        try { localStorage.setItem('bcipc_guide_pos', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) })); } catch {}
+        suppressClick = true;
+        window.setTimeout(() => { suppressClick = false; }, 100);
+      }
+    };
+    guide.addEventListener('pointerdown', onPointerDown);
+
     const clearSpot = () => document.querySelectorAll('.guide-spot').forEach(e => e.classList.remove('guide-spot'));
     const showStep = (i: number) => {
       clearSpot();
@@ -1013,7 +1056,7 @@ function GuideBot() {
     dim.onclick = closeTour;
     bx.onclick = (e) => { e.stopPropagation(); hideBubble(); };
     guide.onclick = () => {
-      if (touring || dropping) return;
+      if (suppressClick || touring || dropping) return;
       dropping = true;
       hideBubble();
       clearT(dwellTimer);
@@ -1034,6 +1077,8 @@ function GuideBot() {
       window.removeEventListener('scroll', onScroll);
       document.removeEventListener('focusin', onFocusIn);
       document.removeEventListener('focusout', onFocusOut);
+      guide.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
       clearT(qtimer); clearT(scrollTimer); clearT(dwellTimer);
       clearSpot();
     };
@@ -1042,7 +1087,8 @@ function GuideBot() {
   return (
     <div ref={rootRef}>
       <style>{`
-.guide-fab{position:fixed;right:14px;bottom:16px;z-index:70;transition:opacity .25s,transform .25s}
+.guide-fab{position:fixed;right:14px;bottom:16px;z-index:70;transition:opacity .25s,transform .25s;touch-action:none;cursor:grab}
+.guide-fab:active{cursor:grabbing}
 .guide-fab.guide-hidden{opacity:0;pointer-events:none;transform:translateY(10px)}
 .guide-fab img{height:74px;width:auto;display:block;cursor:pointer}
 .guide-bubble{position:absolute;width:200px;max-width:58vw;background:#fff;padding:10px 12px;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:12.5px;color:#334155;line-height:1.45;display:none;z-index:71}
@@ -2201,6 +2247,8 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] bg-[#f8fafc] dark:bg-slate-950 font-sans transition-colors duration-300">
+      {/* Màu hex dự phòng cho Safari cũ (iOS 15 trở xuống không đọc được oklch của Tailwind v4) */}
+      <style>{`@supports not (color:oklch(50% 0.1 0)){:root{--color-amber-100:#fef3c6;--color-amber-400:#ffb900;--color-amber-50:#fffbeb;--color-amber-500:#fe9a00;--color-amber-600:#e17100;--color-blue-100:#dbeafe;--color-blue-200:#bedbff;--color-blue-50:#eff6ff;--color-blue-500:#2b7fff;--color-blue-600:#155dfc;--color-blue-700:#1447e6;--color-blue-800:#193cb8;--color-blue-950:#162456;--color-emerald-100:#d0fae5;--color-emerald-200:#a4f4cf;--color-emerald-400:#00d492;--color-emerald-50:#ecfdf5;--color-emerald-500:#00bc7d;--color-emerald-600:#009966;--color-indigo-100:#e0e7ff;--color-indigo-400:#7c86ff;--color-indigo-50:#eef2ff;--color-indigo-500:#615fff;--color-indigo-600:#4f39f6;--color-indigo-700:#432dd7;--color-indigo-900:#312c85;--color-indigo-950:#1e1a4d;--color-orange-400:#ff8904;--color-orange-500:#ff6900;--color-orange-600:#f54900;--color-pink-500:#f6339a;--color-pink-600:#e60076;--color-purple-500:#ad46ff;--color-purple-600:#9810fa;--color-red-200:#ffc9c9;--color-red-50:#fef2f2;--color-red-600:#e7000b;--color-rose-100:#ffe4e6;--color-rose-400:#ff637e;--color-rose-50:#fff1f2;--color-rose-500:#ff2056;--color-rose-600:#ec003f;--color-rose-700:#c70036;--color-slate-100:#f1f5f9;--color-slate-200:#e2e8f0;--color-slate-300:#cad5e2;--color-slate-400:#90a1b9;--color-slate-50:#f8fafc;--color-slate-500:#62748e;--color-slate-600:#45556c;--color-slate-700:#314158;--color-slate-800:#1d293d;--color-slate-900:#0f172b;--color-slate-950:#020618;--color-violet-100:#ede9fe;--color-violet-500:#8e51ff;}}`}</style>
       {/* Toast Notification Container */}
       <AnimatePresence>
         {notification && (
