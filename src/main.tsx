@@ -40,6 +40,9 @@ function renderApp() {
   );
 }
 
+// Thời gian tối đa chờ kiểm tra cập nhật trước khi render (ms)
+const UPDATE_CHECK_TIMEOUT = 1500;
+
 // Kiểm tra có bản mới đang chờ KHÔNG trước khi render
 // -> có thì hiện overlay ngay, khỏi chớp bản cũ
 async function detectPendingUpdate(): Promise<boolean> {
@@ -50,7 +53,7 @@ async function detectPendingUpdate(): Promise<boolean> {
     if (reg.installing || reg.waiting) return true;
     await Promise.race([
       reg.update().catch(() => undefined),
-      new Promise((res) => setTimeout(res, 2000)),
+      new Promise((res) => setTimeout(res, UPDATE_CHECK_TIMEOUT)),
     ]);
     return !!(reg.installing || reg.waiting);
   } catch {
