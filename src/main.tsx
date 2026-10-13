@@ -32,7 +32,8 @@ function hideUpdateOverlay() {
 registerSW({
   immediate: true,
   onRegistered(reg) {
-    reg?.addEventListener('updatefound', () => {
+    if (!reg) return;
+    const onUpdateFound = () => {
       // Chỉ hiện khi đã có SW cũ đang chạy (đang cập nhật thật, không phải cài lần đầu)
       if (!navigator.serviceWorker.controller) return;
       showUpdateOverlay();
@@ -41,7 +42,10 @@ registerSW({
         // Tải lỗi / bị hủy -> ẩn overlay để dùng tiếp bản cũ
         if (nw.state === 'redundant') hideUpdateOverlay();
       });
-    });
+    };
+    // Phòng trường hợp update đã bắt đầu trước khi listener kịp gắn
+    if (reg.installing) onUpdateFound();
+    reg.addEventListener('updatefound', onUpdateFound);
   },
 });
 
