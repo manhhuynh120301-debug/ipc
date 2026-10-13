@@ -945,7 +945,7 @@ function GuideBot() {
       bubble.classList.add('show');
       qi++;
       clearT(qtimer);
-      qtimer = window.setTimeout(nextTip, 3000);
+      qtimer = window.setTimeout(nextTip, 4000);
     };
 
     const mostVisible = (): string | null => {
@@ -973,7 +973,7 @@ function GuideBot() {
         if (id && !played.has(id)) {
           played.add(id);
           queue = [...(GUIDE_TIPS[id] || [])]; qi = 0;
-          dwellTimer = window.setTimeout(nextTip, 2000);
+          dwellTimer = window.setTimeout(nextTip, 1000);
         }
       }, 2000);
     };
@@ -1207,7 +1207,7 @@ export default function App() {
   useEffect(() => {
     const clockTimer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 500);
     return () => clearInterval(clockTimer);
   }, []);
 
