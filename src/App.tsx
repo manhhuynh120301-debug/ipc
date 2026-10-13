@@ -62,6 +62,15 @@ interface MonthlyStats {
   forgotDays: number | null;
 }
 
+interface RankingItem {
+  msnv: string;
+  name: string;
+  samples: number;
+  workDays: number;
+  lateDays: number;
+  forgotDays: number;
+}
+
 // --- Mock Data / Initial State ---
 
 const INITIAL_STATS: MonthlyStats = {
@@ -336,19 +345,807 @@ const StatCard = ({
   );
 };
 
-const RankingSkeleton = () => (
-  <div className="space-y-3">
-    {[1, 2, 3, 4, 5].map((i) => (
-      <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/40 dark:bg-slate-900/40 border border-transparent animate-pulse animate-duration-1000">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800" />
-          <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-        </div>
-        <div className="w-16 h-6 bg-slate-200 dark:bg-slate-800 rounded-full" />
+// --- Ranking UI: podium top 1-3 + rows top 4+ ---
+// Ranking logic:
+// - "Số mẫu" board sorts by productivity = samples / workDays (descending),
+//   tie-break by higher samples. This is fairer: fewer work days with the
+//   same samples means higher productivity and ranks higher.
+// - "Ngày làm" board sorts by b.workDays - a.workDays (unchanged), and shows
+//   each person's work-day change vs the previous month as a small chip
+//   with up/down icon (like the report StatCards).
+
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  return parts.slice(-2).map((p) => p.charAt(0)).join('').toUpperCase();
+};
+
+// Năng suất = số mẫu / ngày làm; ngày làm = 0 thì tính bằng 0 để tránh chia cho 0
+const productivity = (item: RankingItem) => (item.workDays > 0 ? item.samples / item.workDays : 0);
+
+// Tháng liền trước của một tháng input yyyy-MM (để so sánh ngày làm với tháng trước)
+const getPreviousMonthInput = (yyyyMm: string) => {
+  const [y, m] = yyyyMm.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const PODIUM_STYLES = [
+  {
+    // Top 1: gold, tallest card, crown
+    // (gradient viết bằng inline style để tương thích cả Safari đời cũ)
+    card: "border-amber-500/55 hover:border-amber-500/90 hover:shadow-[0_18px_38px_rgba(245,158,11,0.35)] min-h-[190px] sm:min-h-[198px]",
+    cardBg: "linear-gradient(180deg, rgba(245,158,11,0.15), rgba(248,250,252,0.6))",
+    name: "text-amber-600",
+    numColor: "#d97706",
+    avatar: "w-9 h-9 text-xs sm:w-12 sm:h-12 sm:text-[15px]",
+    avatarBg: "linear-gradient(135deg, #f59e0b, #ef4444)",
+    avatarFallback: "#f59e0b",
+    badge: "bg-amber-500",
+  },
+  {
+    // Top 2: blue
+    card: "border-blue-500/55 hover:border-blue-500/90 hover:shadow-[0_18px_38px_rgba(59,130,246,0.35)] min-h-[168px] sm:min-h-[176px]",
+    cardBg: "linear-gradient(180deg, rgba(59,130,246,0.14), rgba(248,250,252,0.6))",
+    name: "text-blue-500",
+    numColor: "#3b82f6",
+    avatar: "w-8 h-8 text-[11px] sm:w-[42px] sm:h-[42px] sm:text-[13px]",
+    avatarBg: "linear-gradient(135deg, #06b6d4, #3b82f6)",
+    avatarFallback: "#0ea5e9",
+    badge: "bg-blue-500",
+  },
+  {
+    // Top 3: green, lowest card
+    card: "border-emerald-500/50 hover:border-emerald-500/90 hover:shadow-[0_18px_38px_rgba(16,185,129,0.32)] min-h-[146px] sm:min-h-[156px]",
+    cardBg: "linear-gradient(180deg, rgba(16,185,129,0.13), rgba(248,250,252,0.6))",
+    name: "text-emerald-600",
+    numColor: "#059669",
+    avatar: "w-8 h-8 text-[11px] sm:w-[38px] sm:h-[38px] sm:text-xs",
+    avatarBg: "linear-gradient(135deg, #10b981, #059669)",
+    avatarFallback: "#10b981",
+    badge: "bg-emerald-500",
+  },
+] as const;
+
+const StatPill = ({
+  item,
+  mode,
+  numColor,
+  className,
+  variant = 'row',
+}: {
+  item: RankingItem;
+  mode: 'samples' | 'workDays';
+  numColor?: string;
+  className?: string;
+  variant?: 'podium' | 'row';
+}) => {
+  const numStyle = numColor ? { color: numColor } : undefined;
+  const isPodium = variant === 'podium';
+  const unitClass = isPodium ? "text-[9px] sm:text-[11px]" : "text-[11px]";
+  return (
+    <span className={cn(
+      "rounded-xl sm:rounded-full font-black text-center flex items-center justify-center border",
+      isPodium ? "px-1.5 sm:px-3 py-1 max-w-full" : "px-2 py-1 sm:py-1 sm:px-3",
+      className
+    )}>
+      {mode === 'samples' ? (
+        <span className={cn(
+          "whitespace-nowrap flex items-center leading-tight",
+          // Trên điện thoại: xếp 2 dòng cho gọn, màn hình lớn trở lại 1 dòng
+          isPodium ? "flex-col sm:flex-row text-[11px] sm:text-sm" : "gap-0.5 text-[13px] sm:text-sm"
+        )}>
+          <span className="flex items-center gap-0.5">
+            <span style={numStyle}>{item.samples}</span>
+            <span className={cn("font-semibold text-slate-400", unitClass)}>mẫu</span>
+          </span>
+          <span className={cn("text-slate-300 mx-0.5", isPodium && "hidden sm:inline")}>/</span>
+          <span className="flex items-center gap-0.5">
+            <span style={numStyle}>{item.workDays}</span>
+            <span className={cn("font-semibold text-slate-400", unitClass)}>ngày</span>
+          </span>
+        </span>
+      ) : (
+        <span className={cn("whitespace-nowrap flex items-center gap-0.5", isPodium ? "text-[11px] sm:text-sm" : "text-[13px] sm:text-sm")}>
+          <span style={numStyle}>{item.workDays}</span>
+          <span className={cn("font-semibold text-slate-400", unitClass)}>ngày</span>
+        </span>
+      )}
+    </span>
+  );
+};
+
+// Chip chênh lệch ngày làm so với tháng trước (chỉ dùng ở tab Ngày làm)
+const DiffChip = ({ diff }: { diff: number }) => {
+  if (diff > 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
+        <TrendingUp className="w-3 h-3" />
+        {diff}
+      </span>
+    );
+  }
+  if (diff < 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 whitespace-nowrap">
+        <TrendingDown className="w-3 h-3" />
+        {Math.abs(diff)}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-100 text-amber-500 px-1.5 py-0.5 whitespace-nowrap">
+      <Minus className="w-4 h-4" strokeWidth={3} />
+    </span>
+  );
+};
+
+const PodiumCard = ({
+  item,
+  rank,
+  mode,
+  diff = null,
+  onSelect,
+  highlight = false,
+}: {
+  item: RankingItem;
+  rank: 0 | 1 | 2; // 0 = top 1, 1 = top 2, 2 = top 3
+  mode: 'samples' | 'workDays';
+  diff?: number | null;
+  onSelect: (item: RankingItem) => void;
+  highlight?: boolean;
+}) => {
+  const s = PODIUM_STYLES[rank];
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: rank === 0 ? 0 : rank === 1 ? 0.05 : 0.1 }}
+      whileHover={{ y: -6, scale: 1.03 }}
+      onClick={() => onSelect(item)}
+      className={cn(
+        "group flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-2xl border px-0.5 sm:px-1 py-2 sm:py-2.5 cursor-pointer transition-[border-color,box-shadow] duration-300",
+        s.card,
+        highlight && "login-highlight"
+      )}
+      style={{ backgroundImage: s.cardBg }}
+    >
+      {rank === 0 ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="w-5 h-[18px] mb-1 text-amber-500 drop-shadow-[0_2px_4px_rgba(245,158,11,0.5)] transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-[8deg]"
+        >
+          <path d="M3 8l4.6 3.8L12 5l4.4 6.8L21 8l-1.6 10.5a1 1 0 0 1-1 .5H5.6a1 1 0 0 1-1-.5z" />
+        </svg>
+      ) : (
+        <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-extrabold mb-1 transition-transform duration-300 group-hover:scale-125", s.badge)}>
+          {rank + 1}
+        </span>
+      )}
+      <div
+        className={cn("rounded-full flex items-center justify-center text-white font-extrabold shadow-md mb-1.5 transition-transform duration-300 group-hover:scale-110", s.avatar)}
+        style={{ backgroundColor: s.avatarFallback, backgroundImage: s.avatarBg }}
+      >
+        {getInitials(item.name)}
       </div>
-    ))}
+      <div className="w-full min-h-[24px] sm:min-h-[28px] flex items-start justify-center px-0.5">
+        <span
+          className={cn("text-[9px] sm:text-[10.5px] font-extrabold leading-tight break-words text-center", s.name)}
+          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+        >
+          {item.name}
+        </span>
+      </div>
+      <div className="mt-1 flex items-center justify-center gap-1 max-w-full">
+        <StatPill
+          item={item}
+          mode={mode}
+          variant="podium"
+          numColor={s.numColor}
+          className="bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
+        />
+        {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
+      </div>
+    </motion.div>
+  );
+};
+
+const RankRow = ({
+  item,
+  index,
+  mode,
+  diff = null,
+  onSelect,
+  highlight = false,
+}: {
+  item: RankingItem;
+  index: number; // 0-based overall rank
+  mode: 'samples' | 'workDays';
+  diff?: number | null;
+  onSelect: (item: RankingItem) => void;
+  highlight?: boolean;
+}) => {
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.05 }}
+      whileHover={{ x: 5 }}
+      onClick={() => onSelect(item)}
+      className={cn(
+        "group flex items-center justify-between px-2.5 py-3 sm:p-3.5 rounded-2xl bg-white/40 border border-transparent hover:bg-[#fefce8] hover:border-[#fef3c7] hover:shadow-[0_4px_14px_rgba(254,240,138,0.35)] transition-colors duration-300 cursor-pointer",
+        highlight && "login-highlight"
+      )}
+    >
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+        <span className="w-5 sm:w-6 text-center font-black flex items-center justify-center flex-shrink-0 text-[16px] sm:text-[18px] text-slate-400 group-hover:text-amber-600 transition-colors duration-300">
+          {index + 1}
+        </span>
+        <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
+          <span className="text-[12px] sm:text-base font-black text-slate-800 break-words sm:truncate leading-tight">
+            {item.name}
+          </span>
+        </div>
+      </div>
+      <div className="flex-shrink-0 ml-1.5 sm:ml-2 flex items-center justify-end gap-1.5">
+        <StatPill
+          item={item}
+          mode={mode}
+          className="bg-slate-100 text-slate-600 border-slate-200/50 transition-all duration-300 group-hover:scale-105 group-hover:bg-white"
+        />
+        {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
+      </div>
+    </motion.div>
+  );
+};
+
+// Lịch sử 1 nhân viên: bấm vào tên trên bảng xếp hạng -> bottom sheet + biểu đồ đường
+interface HistoryPoint {
+  key: string; // "2026-09"
+  label: string; // "09/2026"
+  shortLabel: string; // "T9"
+  samples: number;
+  workDays: number;
+}
+
+// Bot cute hiện lúc chờ tải dữ liệu (ảnh động GIF: bot gõ laptop, chữ MH)
+const BOT_IMG = "/bot-loader.gif";;
+const BOT_HI_IMG = "/bot-hi.gif";;
+const BOT_GUIDE_IDLE_IMG = "/bot-guide-idle.gif";
+const BOT_GUIDE_DROP_IMG = "/bot-guide-drop.gif";
+
+const BotLoader = ({ text = 'Đang tổng hợp dữ liệu...' }: { text?: string }) => (
+  <div className="py-8 flex flex-col items-center justify-center gap-3">
+    <style>{`
+      input[readonly]{opacity:1!important;-webkit-text-fill-color:currentColor;}
+      @keyframes dot-typing { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
+      .dot-typing span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #6366f1; margin: 0 2px; animation: dot-typing 1.2s ease-in-out infinite; }
+      .dot-typing span:nth-child(2) { animation-delay: .15s; }
+      .dot-typing span:nth-child(3) { animation-delay: .3s; }
+    `}</style>
+    <img
+      src={BOT_IMG}
+      alt="Đang tải"
+      className="w-24 h-24 rounded-full object-cover shadow-[0_10px_25px_rgba(99,102,241,0.35)]"
+      draggable={false}
+    />
+    <div className="text-xs font-bold text-slate-500">{text}</div>
+    <div className="dot-typing"><span /><span /><span /></div>
   </div>
 );
+
+// Bảng đăng nhập lúc vào web: bot vẫy chào + nhập MSNV 4 số
+const LoginModal = ({
+  open,
+  initialMsnv,
+  onClose,
+  onLogin,
+}: {
+  open: boolean;
+  initialMsnv: string;
+  onClose: () => void;
+  onLogin: (msnv: string) => void;
+}) => {
+  const [value, setValue] = useState(initialMsnv);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (open) {
+      setValue(initialMsnv);
+      setError('');
+    }
+  }, [open, initialMsnv]);
+  if (!open) return null;
+  const submit = () => {
+    const v = value.trim();
+    if (!/^\d{4}$/.test(v)) {
+      setError('Vui lòng nhập đúng 4 số');
+      return;
+    }
+    onLogin(v);
+  };
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f0a28]/55 backdrop-blur-[3px] login-pop-wrap"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white rounded-[26px] px-6 pt-7 pb-6 w-full max-w-[330px] text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)] login-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Đóng"
+          className="absolute top-3 right-3 w-[30px] h-[30px] rounded-full bg-slate-100 text-slate-500 text-[15px] font-extrabold leading-none"
+        >
+          ✕
+        </button>
+        <img
+          src={BOT_HI_IMG}
+          alt="Xin chào"
+          className="w-[110px] h-[110px] rounded-full object-cover mx-auto shadow-[0_8px_24px_rgba(124,58,237,0.35)] border-4 border-violet-100"
+          draggable={false}
+        />
+        <h2 className="text-[20px] font-extrabold text-slate-800 mt-3">Xin chào! 👋</h2>
+        <div className="text-[16px] font-extrabold text-slate-800 mt-1 mb-4">Nhập MSNV ở đây</div>
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          inputMode="numeric"
+          maxLength={4}
+          placeholder="••••"
+          autoFocus
+          className="w-full text-[22px] font-extrabold tracking-[10px] text-center pl-[18px] py-3 border-2 border-slate-200 rounded-2xl text-slate-800 outline-none focus:border-violet-500 placeholder:text-slate-300"
+        />
+        {error ? <div className="text-rose-500 text-xs font-bold mt-2">{error}</div> : null}
+        <button
+          onClick={submit}
+          className="w-full mt-3 py-[13px] rounded-2xl text-[15px] font-extrabold text-white bg-gradient-to-br from-indigo-500 to-violet-500 active:scale-[0.98] transition-transform"
+        >
+          Đăng nhập
+        </button>
+        <button onClick={onClose} className="mt-2.5 text-[12.5px] font-semibold text-slate-400">
+          Bỏ qua, vào xem luôn →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const HistoryChart = ({ data, mode }: { data: HistoryPoint[]; mode: 'samples' | 'workDays' }) => {
+  if (data.length < 2) {
+    return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
+  }
+  const first = data[0];
+  const lastPt = data[data.length - 1];
+  if (!first || !lastPt) {
+    return <div className="py-10 text-center text-xs font-semibold text-slate-400">Chưa đủ dữ liệu các tháng</div>;
+  }
+  const val = (d: HistoryPoint) => (mode === 'samples' ? d.samples : d.workDays);
+  const lineColor = mode === 'workDays' ? '#ec4899' : '#10b981';
+  const areaColor = mode === 'workDays' ? '#f9a8d4' : '#34d399';
+  const W = 360, H = 200, P = { l: 14, r: 14, t: 26, b: 30 };
+  const vals = data.map(val);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) * 0.25 || 1;
+  const lo = min - span, hi = max + span;
+  const X = (i: number) => P.l + (i * (W - P.l - P.r)) / (data.length - 1);
+  const Y = (v: number) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
+  // Catmull-Rom -> bezier: đường cong mượt tự nhiên qua các điểm, không gãy khúc
+  const coords: Array<[number, number]> = data.map((d, i) => [X(i), Y(val(d))]);
+  let linePath = `M ${coords[0][0]},${coords[0][1]}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[Math.max(0, i - 1)], p1 = coords[i], p2 = coords[i + 1], p3 = coords[Math.min(coords.length - 1, i + 2)];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    linePath += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+  }
+  const baseY = H - P.b;
+  const areaPath = `${linePath} L ${coords[coords.length - 1][0]},${baseY} L ${coords[0][0]},${baseY} Z`;
+  const lastX = X(data.length - 1), lastY = Y(val(lastPt));
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <defs>
+        <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={areaColor} stopOpacity="0.35" />
+          <stop offset="0.55" stopColor={areaColor} stopOpacity="0.12" />
+          <stop offset="1" stopColor={areaColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0.25, 0.5, 0.75].map((f) => {
+        const y = P.t + f * (H - P.t - P.b);
+        return <line key={f} x1={P.l} y1={y} x2={W - P.r} y2={y} stroke="#e8edf3" strokeWidth={1} strokeDasharray="4 4" />;
+      })}
+      <path d={areaPath} fill="url(#histArea)" />
+      <path d={linePath} fill="none" stroke={lineColor} strokeWidth={2} strokeLinecap="round" />
+      <circle cx={lastX} cy={lastY} r={9} fill={lineColor} opacity={0.18} />
+      {data.map((d, i) => (
+        <g key={d.key}>
+          <circle cx={X(i)} cy={Y(val(d))} r={4} fill="#fff" stroke={lineColor} strokeWidth={2} />
+          <text x={X(i)} y={Y(val(d)) - 11} textAnchor="middle" fontSize={10.5} fontWeight={800} fill="#475569">{val(d)}</text>
+          <text x={X(i)} y={H - 10} textAnchor="middle" fontSize={10.5} fontWeight={700} fill="#94a3b8">{d.shortLabel}</text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+const HistorySheet = ({
+  item,
+  data,
+  loading,
+  mode,
+  onClose,
+}: {
+  item: RankingItem;
+  data: HistoryPoint[];
+  loading: boolean;
+  mode: 'samples' | 'workDays';
+  onClose: () => void;
+}) => {
+  const val = (d: HistoryPoint) => (mode === 'samples' ? d.samples : d.workDays);
+  const unit = mode === 'samples' ? 'mẫu' : 'ngày';
+  const total = data.reduce((s, d) => s + val(d), 0);
+  const avg = data.length ? Math.round(total / data.length) : 0;
+  const best: HistoryPoint | null = data.reduce<HistoryPoint | null>(
+    (b, d) => (val(d) > (b ? val(b) : -1) ? d : b),
+    null
+  );
+  const last = data[data.length - 1];
+  const prev = data[data.length - 2];
+  const trend = last && prev && val(prev) > 0
+    ? Math.round(((val(last) - val(prev)) / val(prev)) * 100)
+    : null;
+  const stats = [
+    { v: total.toLocaleString('vi-VN'), l: `Tổng ${data.length} tháng` },
+    { v: avg.toLocaleString('vi-VN'), l: 'Trung bình' },
+    { v: best ? val(best).toLocaleString('vi-VN') : '—', l: best ? `Cao nhất · ${best.shortLabel}` : 'Cao nhất' },
+  ];
+  return (
+    <motion.div
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[80] bg-slate-900/55 flex items-end sm:items-center justify-center sm:p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0.4 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white w-full sm:max-w-[430px] rounded-t-[26px] sm:rounded-[26px] px-[18px] pt-2.5 pb-6 max-h-[88vh] overflow-y-auto"
+      >
+        <div className="w-[42px] h-[5px] rounded bg-slate-200 mx-auto mb-3" />
+        <div className="flex items-center gap-3">
+          <div
+            className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white font-extrabold text-[17px] shadow-md flex-shrink-0"
+            style={{ backgroundColor: '#f59e0b', backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
+          >
+            {getInitials(item.name)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[16px] font-extrabold text-slate-900 truncate">{item.name}</div>
+            <div className="text-[11px] text-slate-400 font-semibold mt-0.5">MSNV: {item.msnv}</div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Đóng"
+            className="ml-auto w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {loading ? (
+          <BotLoader />
+        ) : (
+          <>
+            <div className="flex gap-2 mt-3.5">
+              {stats.map((s) => (
+                <div key={s.l} className="flex-1 bg-slate-50 border border-slate-100 rounded-[14px] px-1.5 py-2.5 text-center">
+                  <div className="text-[15px] font-extrabold text-slate-900">{s.v} <small className="text-[10px] font-semibold text-slate-400">{unit}</small></div>
+                  <div className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-[3px]">{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between mt-3.5 mb-1.5 px-0.5">
+              <span className="text-xs font-extrabold text-slate-700">{mode === 'samples' ? 'Số mẫu theo tháng' : 'Ngày làm theo tháng'}</span>
+              {trend !== null && prev && (
+                <span className={cn(
+                  "inline-flex items-center gap-1 text-[10.5px] font-bold px-2.5 py-[3px] rounded-full border",
+                  trend >= 0 ? "text-emerald-600 bg-emerald-50 border-emerald-200" : "text-red-600 bg-red-50 border-red-200"
+                )}>
+                  {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {trend >= 0 ? `+${trend}%` : `${trend}%`} so với {prev.shortLabel}
+                </span>
+              )}
+            </div>
+            <div className="bg-slate-50 border border-slate-100 rounded-[18px] px-2 pt-3 pb-1.5">
+              <HistoryChart data={data} mode={mode} />
+            </div>
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
+/* ================= BOT HƯỚNG DẪN (guide) ================= */
+const GUIDE_TIPS: Record<string, string[]> = {
+  'guide-sec-report': ['Nhập <b>MSNV</b> để bắt đầu báo cáo 📝'],
+  'guide-sec-ranking': ['<b>Bấm vào tên</b> để xem thống kê 6 tháng 📊', 'Bấm qua tab <b>Ngày làm</b> để xem số ngày làm việc 📅'],
+};
+
+const GUIDE_TOUR: { html: string; getEl?: () => Element | null }[] = [
+  { html: 'Chào bạn! 👋 Mình dẫn bạn đi 1 vòng nhé!' },
+  { html: '<b>Bấm vào tên</b> để xem thống kê 6 tháng 📊', getEl: () => document.querySelector('#guide-rows > *:first-child') || document.querySelector('#guide-sec-ranking') },
+  { html: 'Bấm qua tab <b>Ngày làm</b> để xem số ngày làm việc 📅', getEl: () => document.querySelector('#guide-tabs') },
+  { html: 'Nhập <b>MSNV</b> để bắt đầu báo cáo 📝', getEl: () => document.querySelector('#guide-sec-report') },
+  { html: 'Xong rồi đó, chúc bạn làm việc vui vẻ nha! 🎉' },
+];
+
+function GuideBot() {
+  const [dropSrc, setDropSrc] = useState<string | null>(null);
+  const [dropKey, setDropKey] = useState(0);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const q = (s: string): HTMLElement | null => root.querySelector<HTMLElement>(s);
+    const guide = q('.guide-fab'), bubble = q('.guide-bubble'), btext = q('.guide-btext'),
+      dim = q('.guide-dim'), tourbar = q('.guide-tourbar'), ttext = q('.guide-ttext'),
+      tbtn = q('.guide-tbtn'), tdots = q('.guide-tdots'), bx = q('.guide-bx');
+    if (!guide || !bubble || !btext || !dim || !tourbar || !ttext || !tbtn || !tdots || !bx) return;
+
+    [BOT_GUIDE_IDLE_IMG, BOT_GUIDE_DROP_IMG].forEach(s => { const im = new Image(); im.src = s; });
+
+    let queue: string[] = [], qi = 0, tourIdx = 0;
+    let qtimer: number | undefined, scrollTimer: number | undefined, dwellTimer: number | undefined;
+    const played = new Set<string>();
+    let touring = false, dropping = false;
+    const clearT = (t: number | undefined) => { if (t !== undefined) clearTimeout(t); };
+
+    const hideBubble = () => { bubble.classList.remove('show'); clearT(qtimer); qtimer = undefined; queue = []; };
+
+    const placeBubble = () => {
+      bubble.style.visibility = 'hidden';
+      bubble.classList.add('show');
+      const bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+      const gr = guide.getBoundingClientRect();
+      const secs = ['guide-sec-report', 'guide-sec-ranking']
+        .map(id => document.getElementById(id))
+        .filter((e): e is HTMLElement => !!e)
+        .map(el => el.getBoundingClientRect());
+      const cands: Record<string, { x: number; y: number }> = {
+        left: { x: gr.left - bw - 10, y: gr.top + gr.height - bh - 22 },
+        top: { x: gr.right - bw, y: gr.top - bh - 10 },
+      };
+      let best = 'left', bestScore = Infinity;
+      for (const k of Object.keys(cands)) {
+        const r = cands[k]; let score = 0;
+        for (const c of secs) {
+          const ix = Math.max(0, Math.min(r.x + bw, c.right) - Math.max(r.x, c.left));
+          const iy = Math.max(0, Math.min(r.y + bh, c.bottom) - Math.max(r.y, c.top));
+          score += ix * iy;
+        }
+        if (r.x < 8 || r.x + bw > window.innerWidth - 8) score += 1e9;
+        if (r.y < 8) score += 1e9;
+        if (score < bestScore) { bestScore = score; best = k; }
+      }
+      bubble.classList.remove('show');
+      bubble.style.visibility = '';
+      bubble.classList.remove('pos-left', 'pos-top');
+      bubble.classList.add('pos-' + best);
+    };
+
+    const nextTip = () => {
+      if (qi >= queue.length) { bubble.classList.remove('show'); queue = []; return; }
+      btext.innerHTML = queue[qi];
+      placeBubble();
+      bubble.classList.add('show');
+      qi++;
+      clearT(qtimer);
+      qtimer = window.setTimeout(nextTip, 3000);
+    };
+
+    const mostVisible = (): string | null => {
+      const ih = window.innerHeight;
+      let bestId: string | null = null, bestScore = 0;
+      for (const id of ['guide-sec-report', 'guide-sec-ranking']) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.top < ih * 0.6 && r.bottom > ih * 0.4) {
+          const vis = Math.min(r.bottom, ih) - Math.max(r.top, 0);
+          const s = vis / Math.min(r.height, ih);
+          if (s > 0.25 && s > bestScore) { bestScore = s; bestId = id; }
+        }
+      }
+      return bestId;
+    };
+
+    const onScroll = () => {
+      hideBubble();
+      clearT(scrollTimer); clearT(dwellTimer);
+      scrollTimer = window.setTimeout(() => {
+        if (touring || dropping) return;
+        const id = mostVisible();
+        if (id && !played.has(id)) {
+          played.add(id);
+          queue = [...(GUIDE_TIPS[id] || [])]; qi = 0;
+          dwellTimer = window.setTimeout(nextTip, 2000);
+        }
+      }, 2000);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Tự ẩn bot khi bàn phím mở (focus vào ô nhập), hiện lại khi đóng
+    const isTextField = (el: Element | null) => !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+    const onFocusIn = (e: FocusEvent) => { if (isTextField(e.target as Element | null)) { guide.classList.add('guide-hidden'); hideBubble(); } };
+    const onFocusOut = () => {
+      window.setTimeout(() => { if (!isTextField(document.activeElement)) guide.classList.remove('guide-hidden'); }, 50);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+
+    // Kéo thả bot: nhấn giữ rồi kéo để di chuyển, thả ra là ở yên (nhớ vị trí cho lần sau)
+    let suppressClick = false;
+    let dragSt: { sx: number; sy: number; fx: number; fy: number; dx: number; dy: number; dragging: boolean } | null = null;
+    let dragRaf = 0;
+    let fabW = 0, fabH = 0;
+    // vị trí nghỉ: dùng left/top; lúc đang kéo: dùng transform (GPU, mượt, không giật layout)
+    const setRestPos = (x: number, y: number) => {
+      const cx = Math.min(Math.max(x, 8), window.innerWidth - fabW - 8);
+      const cy = Math.min(Math.max(y, 8), window.innerHeight - fabH - 8);
+      guide.style.left = cx + 'px';
+      guide.style.top = cy + 'px';
+      guide.style.right = 'auto';
+      guide.style.bottom = 'auto';
+      guide.style.transform = '';
+    };
+    fabW = guide.offsetWidth; fabH = guide.offsetHeight;
+    try {
+      const saved = JSON.parse(localStorage.getItem('bcipc_guide_pos') || 'null');
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') setRestPos(saved.x, saved.y);
+    } catch {}
+    const applyDragFrame = () => {
+      dragRaf = 0;
+      if (!dragSt || !dragSt.dragging) return;
+      const tx = Math.min(Math.max(dragSt.fx + dragSt.dx, 8), window.innerWidth - fabW - 8) - dragSt.fx;
+      const ty = Math.min(Math.max(dragSt.fy + dragSt.dy, 8), window.innerHeight - fabH - 8) - dragSt.fy;
+      guide.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      fabW = guide.offsetWidth; fabH = guide.offsetHeight;
+      const r = guide.getBoundingClientRect();
+      // chốt vị trí nghỉ hiện tại sang left/top để transform lúc kéo tính từ đó
+      setRestPos(r.left, r.top);
+      dragSt = { sx: e.clientX, sy: e.clientY, fx: r.left, fy: r.top, dx: 0, dy: 0, dragging: false };
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp, { once: true });
+      window.addEventListener('pointercancel', onPointerUp, { once: true });
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragSt) return;
+      const dx = e.clientX - dragSt.sx, dy = e.clientY - dragSt.sy;
+      if (!dragSt.dragging && Math.hypot(dx, dy) > 8) { dragSt.dragging = true; hideBubble(); }
+      if (dragSt.dragging) {
+        dragSt.dx = dx; dragSt.dy = dy;
+        if (!dragRaf) dragRaf = requestAnimationFrame(applyDragFrame);
+      }
+    };
+    const onPointerUp = () => {
+      if (dragRaf) { cancelAnimationFrame(dragRaf); dragRaf = 0; }
+      window.removeEventListener('pointermove', onPointerMove);
+      if (!dragSt) return;
+      const wasDragging = dragSt.dragging;
+      if (wasDragging) {
+        const nx = Math.min(Math.max(dragSt.fx + dragSt.dx, 8), window.innerWidth - fabW - 8);
+        const ny = Math.min(Math.max(dragSt.fy + dragSt.dy, 8), window.innerHeight - fabH - 8);
+        setRestPos(nx, ny);
+        try { localStorage.setItem('bcipc_guide_pos', JSON.stringify({ x: Math.round(nx), y: Math.round(ny) })); } catch {}
+        suppressClick = true;
+        window.setTimeout(() => { suppressClick = false; }, 100);
+      }
+      dragSt = null;
+    };
+    guide.addEventListener('pointerdown', onPointerDown);
+
+    const clearSpot = () => document.querySelectorAll('.guide-spot').forEach(e => e.classList.remove('guide-spot'));
+    const showStep = (i: number) => {
+      clearSpot();
+      const st = GUIDE_TOUR[i];
+      const el = st.getEl ? st.getEl() : null;
+      if (el) { el.classList.add('guide-spot'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      ttext.innerHTML = st.html;
+      tbtn.textContent = i === GUIDE_TOUR.length - 1 ? 'Xong 🎉' : 'Tiếp tục →';
+      tdots.innerHTML = GUIDE_TOUR.map((_, k) => `<span class="${k === i ? 'on' : ''}"></span>`).join('');
+    };
+    const closeTour = () => {
+      touring = false;
+      dim.classList.remove('show');
+      tourbar.classList.remove('show');
+      clearSpot();
+    };
+    tbtn.onclick = () => {
+      if (tourIdx >= GUIDE_TOUR.length - 1) closeTour();
+      else { tourIdx++; showStep(tourIdx); }
+    };
+    dim.onclick = closeTour;
+    bx.onclick = (e) => { e.stopPropagation(); hideBubble(); };
+    guide.onclick = () => {
+      if (suppressClick || touring || dropping) return;
+      dropping = true;
+      hideBubble();
+      clearT(dwellTimer);
+      setDropKey(k => k + 1);
+      setDropSrc(BOT_GUIDE_DROP_IMG);
+      window.setTimeout(() => {
+        setDropSrc(null);
+        dropping = false;
+        touring = true;
+        tourIdx = 0;
+        dim.classList.add('show');
+        tourbar.classList.add('show');
+        showStep(0);
+      }, 5600);
+    };
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+      guide.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      if (dragRaf) cancelAnimationFrame(dragRaf);
+      clearT(qtimer); clearT(scrollTimer); clearT(dwellTimer);
+      clearSpot();
+    };
+  }, []);
+
+  return (
+    <div ref={rootRef}>
+      <style>{`
+.guide-fab{position:fixed;right:14px;bottom:16px;z-index:70;transition:opacity .25s;touch-action:none;cursor:grab}
+.guide-fab:active{cursor:grabbing}
+.guide-fab.guide-hidden{opacity:0;pointer-events:none}
+.guide-fab img{height:74px;width:auto;display:block;cursor:pointer}
+.guide-bubble{position:absolute;width:200px;max-width:58vw;background:#fff;padding:10px 12px;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:12.5px;color:#334155;line-height:1.45;display:none;z-index:71}
+.guide-bubble.show{display:block;animation:guidePop .3s ease}
+@keyframes guidePop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.guide-bubble b{color:#1e293b}
+.guide-bubble .guide-bx{position:absolute;top:4px;right:6px;border:0;background:none;color:#94a3b8;font-size:12px;cursor:pointer}
+.guide-bubble.pos-left{right:84px;bottom:22px;border-radius:16px 16px 4px 16px}
+.guide-bubble.pos-left:after{content:'';position:absolute;right:-7px;bottom:22px;border:7px solid transparent;border-left-color:#fff;border-right:0}
+.guide-bubble.pos-top{right:0;bottom:84px;border-radius:16px 16px 16px 4px}
+.guide-bubble.pos-top:after{content:'';position:absolute;right:26px;bottom:-7px;border:7px solid transparent;border-top-color:#fff;border-bottom:0}
+.guide-dim{position:fixed;inset:0;background:rgba(15,10,40,.35);z-index:65;display:none}
+.guide-dim.show{display:block}
+.guide-tourbar{position:fixed;left:14px;right:14px;bottom:14px;z-index:66;background:#fff;border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,.28);padding:14px 16px;display:none}
+.guide-tourbar.show{display:block;animation:guidePop .3s ease}
+.guide-tdots{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
+.guide-tdots span{width:7px;height:7px;border-radius:99px;background:#e2e8f0}
+.guide-tdots span.on{width:22px;background:#8b5cf6}
+.guide-ttext{font-size:13.5px;color:#334155;line-height:1.55;text-align:center;margin-bottom:10px}
+.guide-ttext b{color:#1e293b}
+.guide-tbtn{display:block;width:100%;border:0;border-radius:12px;background:#8b5cf6;color:#fff;font-weight:800;font-size:14px;padding:11px;cursor:pointer}
+.guide-spot{position:relative;z-index:5}
+.guide-spot::after{content:'';position:absolute;inset:-6px;border-radius:18px;border:3px solid #a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.25);animation:guidePulse 1.2s ease-in-out infinite;pointer-events:none}
+@keyframes guidePulse{0%,100%{opacity:1}50%{opacity:.55}}
+`}</style>
+      <div className="guide-fab">
+        <div className="guide-bubble"><button className="guide-bx">✕</button><span className="guide-btext"></span></div>
+        <img key={dropKey} src={dropSrc ?? BOT_GUIDE_IDLE_IMG} alt="Bot hướng dẫn" />
+      </div>
+      <div className="guide-dim" />
+      <div className="guide-tourbar">
+        <div className="guide-tdots" />
+        <div className="guide-ttext" />
+        <button className="guide-tbtn">Tiếp tục →</button>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [employeeId, setEmployeeId] = useState('');
@@ -627,18 +1424,34 @@ export default function App() {
     return val ? parseInt(val) : 0;
   });
 
-  interface RankingItem {
-    msnv: string;
-    name: string;
-    samples: number;
-    workDays: number;
-    lateDays: number;
-    forgotDays: number;
-  }
-
-  const [rankingMonth, setRankingMonth] = useState(currentMonth);
+  const [rankingMonth, setRankingMonth] = useState(previousMonth);
+  const [rankingTab, setRankingTab] = useState<'samples' | 'workDays'>('samples');
+  // Đăng nhập MSNV lúc vào web: hiện bảng chào 1 lần mỗi lần tải trang
+  const [showLogin, setShowLogin] = useState(true);
+  const [loggedMsnv, setLoggedMsnv] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('bcipc_logged_msnv');
+    } catch {
+      return null;
+    }
+  });
+  const handleLogin = (msnv: string) => {
+    setEmployeeId(msnv);
+    setLoggedMsnv(msnv);
+    try {
+      localStorage.setItem('bcipc_logged_msnv', msnv);
+    } catch {}
+    setShowLogin(false);
+  };
   const [rankings, setRankings] = useState<RankingItem[]>([]);
+  const [prevRankings, setPrevRankings] = useState<RankingItem[]>([]);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
+  // Lịch sử 1 nhân viên: bấm vào tên trên bảng xếp hạng
+  const [historyItem, setHistoryItem] = useState<RankingItem | null>(null);
+  const [historyData, setHistoryData] = useState<HistoryPoint[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  // Cache số liệu từng tháng (key "2026-09"): tải trước ngầm để bấm tên là hiện ngay
+  const historyMonthsCache = useRef(new Map<string, RankingItem[]>());
 
   // Direct Apps Script integration helpers
   const APPS_SCRIPT_URL_RAW = (import.meta as any).env.VITE_APPS_SCRIPT_URL || '';
@@ -905,8 +1718,18 @@ export default function App() {
     setIsLoadingRankings(true);
     try {
       const formattedMonth = toMonthYear(rankingMonth);
-      const data = await apiGetRankings(formattedMonth);
+      const prevFormattedMonth = toMonthYear(getPreviousMonthInput(rankingMonth));
+      const [data, prevData] = await Promise.all([
+        apiGetRankings(formattedMonth),
+        apiGetRankings(prevFormattedMonth),
+      ]);
       setRankings(data);
+      setPrevRankings(prevData);
+      // Tải trước ngầm 6 tháng gần nhất để bấm vào tên là hiện lịch sử ngay
+      warmHistoryCache([
+        { key: rankingMonth, data },
+        { key: getPreviousMonthInput(rankingMonth), data: prevData },
+      ]);
     } catch (err) {
       console.error("Error fetching rankings:", err);
     } finally {
@@ -917,6 +1740,83 @@ export default function App() {
   useEffect(() => {
     fetchRankings();
   }, [rankingMonth]);
+
+  // 6 tháng gần nhất tính đến tháng đang xem (định dạng "2026-09", cũ -> mới)
+  const getHistoryMonths = () => {
+    const months: string[] = [];
+    let cur = rankingMonth;
+    for (let i = 0; i < 6; i++) {
+      months.unshift(cur);
+      cur = getPreviousMonthInput(cur);
+    }
+    return months;
+  };
+
+  // Tải trước ngầm số liệu các tháng (chạy nền, không chặn UI)
+  const warmHistoryCache = (already: Array<{ key: string; data: RankingItem[] }>) => {
+    already.forEach(({ key, data }) => {
+      if (!historyMonthsCache.current.has(key)) historyMonthsCache.current.set(key, data);
+    });
+    const missing = getHistoryMonths().filter((m) => !historyMonthsCache.current.has(m));
+    if (missing.length === 0) return;
+    Promise.all(
+      missing.map((m) =>
+        apiGetRankings(toMonthYear(m))
+          .then((d) => ({ m, d: d as RankingItem[] }))
+          .catch(() => ({ m, d: [] as RankingItem[] }))
+      )
+    )
+      .then((res) => res.forEach(({ m, d }) => historyMonthsCache.current.set(m, d)))
+      .catch(() => {});
+  };
+
+  // Dựng dữ liệu lịch sử 1 nhân viên từ cache tháng
+  const buildHistory = (item: RankingItem, months: string[]): HistoryPoint[] => {
+    const data: HistoryPoint[] = [];
+    months.forEach((m) => {
+      const found = (historyMonthsCache.current.get(m) || []).find((r) => r.msnv === item.msnv);
+      if (!found) return;
+      const mm = m.split('-')[1] ?? '01';
+      data.push({
+        key: m,
+        label: toMonthYear(m),
+        shortLabel: `T${parseInt(mm, 10)}`,
+        samples: found.samples || 0,
+        workDays: found.workDays || 0,
+      });
+    });
+    return data;
+  };
+
+  // Mở bottom sheet lịch sử: ưu tiên cache đã tải trước, bấm là hiện ngay
+  const openHistory = (item: RankingItem) => {
+    setHistoryItem(item);
+    const months = getHistoryMonths();
+    const missing = months.filter((m) => !historyMonthsCache.current.has(m));
+    if (missing.length === 0) {
+      setIsLoadingHistory(false);
+      setHistoryData(buildHistory(item, months));
+      return;
+    }
+    // Trường hợp hiếm (bấm khi cache nền chưa xong): tải nốt tháng còn thiếu
+    setHistoryData([]);
+    setIsLoadingHistory(true);
+    Promise.all(
+      missing.map((m) =>
+        apiGetRankings(toMonthYear(m))
+          .then((d) => ({ m, d: d as RankingItem[] }))
+          .catch(() => ({ m, d: [] as RankingItem[] }))
+      )
+    )
+      .then((res) => {
+        res.forEach(({ m, d }) => historyMonthsCache.current.set(m, d));
+        setHistoryData(buildHistory(item, months));
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingHistory(false));
+  };
+
+  const closeHistory = () => setHistoryItem(null);
 
   // Filter and sort notifications based on the current month's cycle (REAL current date only)
   const filteredNotifications = useMemo(() => {
@@ -942,6 +1842,20 @@ export default function App() {
       return notifTime > lastReadTime;
     }).length;
   }, [filteredNotifications, lastReadTime]);
+
+  // Map msnv -> số ngày làm của tháng trước (để so sánh tăng/giảm ở tab Ngày làm)
+  const prevWorkDaysMap = useMemo(() => {
+    const map = new Map<string, number>();
+    prevRankings.forEach((r) => map.set(r.msnv, r.workDays));
+    return map;
+  }, [prevRankings]);
+
+  // Chênh lệch ngày làm so với tháng trước; null = không so sánh (tab Số mẫu hoặc thiếu dữ liệu)
+  const getWorkDayDiff = (item: RankingItem): number | null => {
+    if (rankingTab !== 'workDays') return null;
+    const prev = prevWorkDaysMap.get(item.msnv);
+    return prev === undefined ? null : item.workDays - prev;
+  };
 
   // Load current stats automatically from Sheet
   useEffect(() => {
@@ -1322,63 +2236,6 @@ export default function App() {
     });
   };
 
-  const renderRankItem = (item: RankingItem, index: number, valueKey: 'samples' | 'workDays', unit: string) => {
-    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
-    const isTop3 = index < 3;
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, delay: index * 0.05 }}
-        key={item.msnv}
-        className={cn(
-          "flex items-center justify-between px-2.5 py-3 sm:p-3.5 rounded-2xl transition-all duration-300",
-          isTop3 
-            ? "bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-500/10 hover:border-indigo-500/20" 
-            : "bg-white/40 dark:bg-slate-900/10 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-800/50"
-        )}
-      >
-        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-          <span className={cn(
-            "w-5 sm:w-6 text-center font-black flex items-center justify-center flex-shrink-0 text-[16px] sm:text-[18px]",
-            isTop3 ? "text-indigo-500" : "text-slate-400"
-          )}>
-            {medal ? medal : `${index + 1}`}
-          </span>
-          <div className="flex items-center min-w-0 flex-1 py-0.5 pr-1">
-            <span className="text-[12px] sm:text-base font-black text-slate-800 dark:text-slate-100 break-words sm:truncate leading-tight">
-              {item.name}
-            </span>
-          </div>
-        </div>
-        <div className="text-right flex-shrink-0 ml-1.5 sm:ml-2">
-          <div className={cn(
-            "rounded-xl sm:rounded-full font-black transition-all",
-            "px-2 py-1 sm:py-1 sm:px-3 text-center flex items-center justify-center border",
-            isTop3 
-              ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" 
-              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50"
-          )}>
-            {valueKey === 'samples' ? (
-              <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
-                <span>{item.samples}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">mẫu</span>
-                <span className="text-slate-300 dark:text-slate-700 mx-0.5">/</span>
-                <span>{item.workDays}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">ngày</span>
-              </span>
-            ) : (
-              <span className="text-[13px] sm:text-sm whitespace-nowrap flex items-center gap-0.5">
-                <span>{item[valueKey]}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{unit}</span>
-              </span>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
   const padNum = (num: number) => String(num).padStart(2, '0');
   const formattedTime = `${padNum(currentTime.getHours())}:${padNum(currentTime.getMinutes())}:${padNum(currentTime.getSeconds())}`;
   const getVietnameseWeekdayAndDate = (date: Date) => {
@@ -1413,7 +2270,6 @@ export default function App() {
       <AnimatePresence>
         {notification && (
           <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             className={cn(
@@ -1575,7 +2431,6 @@ export default function App() {
 
             <motion.div
               id="notif-panel"
-              initial={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
@@ -1675,7 +2530,6 @@ export default function App() {
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 className="max-w-6xl mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
@@ -1731,8 +2585,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          <motion.section 
-            initial={{ opacity: 0, scale: 0.98 }}
+          <motion.section id="guide-sec-report"
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-6xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
           >
@@ -1772,7 +2625,6 @@ export default function App() {
             <AnimatePresence>
               {showInstructions && !googleSheetsConnected && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden mb-6"
@@ -1872,7 +2724,6 @@ export default function App() {
           <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
             {/* Current Month Panel */}
             <motion.div 
-              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
             >
@@ -1930,7 +2781,6 @@ export default function App() {
 
             {/* Previous Month Panel - Read Only */}
             <motion.div 
-              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
             >
@@ -1950,7 +2800,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.samples ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -1960,7 +2809,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.workDays ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -1973,7 +2821,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.lateDays ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -1983,7 +2830,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.forgotDays ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -2092,7 +2938,7 @@ export default function App() {
           )}
 
           {/* THỐNG KÊ IPC */}
-          <div className="max-w-4xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-3 py-5 sm:p-8 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
+          <div id="guide-sec-ranking" className="max-w-4xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-3 py-5 sm:p-8 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl">
@@ -2104,8 +2950,8 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto max-w-full min-w-0 overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng hiện tại</span>
-                <div className="relative w-full sm:w-auto max-w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 whitespace-nowrap flex-shrink-0">Tháng Thống Kê</span>
+                <div className="relative flex-1 sm:flex-none sm:w-auto min-w-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" style={{ transform: 'translateZ(0)' }}>
                   <input 
                     type="month" 
                     value={rankingMonth}
@@ -2116,64 +2962,73 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Panel 1: Xếp hạng số mẫu */}
-              <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
-                <h4 
-                  className="text-[1.1rem] font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2"
-                  style={{ textShadow: "0 0 10px rgba(99,102,241,0.35), 0 0 20px rgba(99,102,241,0.20)" }}
+            <style>{`
+  @keyframes login-pop { from { transform: scale(.92) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .login-pop { animation: login-pop .3s ease; }
+  @keyframes login-glow { 0%,100% { box-shadow: 0 0 0 3px rgba(59,130,246,.18), 0 0 14px rgba(59,130,246,.25); } 50% { box-shadow: 0 0 0 3px rgba(59,130,246,.30), 0 0 26px rgba(59,130,246,.5); } }
+  .login-highlight { border-color: #3b82f6 !important; background-color: #eff6ff !important; animation: login-glow 2s ease-in-out infinite; }
+`}</style>
+{/* Ranking board: tabs Số mẫu / Ngày làm, một bảng duy nhất */}
+            <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
+              <div id="guide-tabs" className="flex bg-slate-200/70 dark:bg-slate-800/60 rounded-2xl p-1 gap-1">
+                <button
+                  onClick={() => setRankingTab('samples')}
+                  className={cn(
+                    "flex-1 rounded-xl py-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer",
+                    rankingTab === 'samples'
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  )}
                 >
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></span>
-                  </span>
-                  Xếp hạng số mẫu
-                </h4>
-
-                {isLoadingRankings ? (
-                  <RankingSkeleton />
-                ) : rankings.length === 0 ? (
-                  <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    Chưa có dữ liệu tháng được chọn
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {(() => {
-                      const sorted = [...rankings].sort((a, b) => b.samples - a.samples);
-                      return sorted.map((item, index) => renderRankItem(item, index, 'samples', 'mẫu'));
-                    })()}
-                  </div>
-                )}
+                  Số mẫu
+                </button>
+                <button
+                  onClick={() => setRankingTab('workDays')}
+                  className={cn(
+                    "flex-1 rounded-xl py-2 text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer",
+                    rankingTab === 'workDays'
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  )}
+                >
+                  Ngày làm
+                </button>
               </div>
 
-              {/* Panel 2: Xếp hạng ngày làm */}
-              <div className="bg-slate-50/50 dark:bg-slate-950/40 px-2 py-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 space-y-4">
-                <h4 
-                  className="text-[1.1rem] font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2"
-                  style={{ textShadow: "0 0 10px rgba(16,185,129,0.35), 0 0 20px rgba(16,185,129,0.20)" }}
-                >
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                  </span>
-                  Xếp hạng ngày làm
-                </h4>
-
-                {isLoadingRankings ? (
-                  <RankingSkeleton />
-                ) : rankings.length === 0 ? (
-                  <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    Chưa có dữ liệu tháng được chọn
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {(() => {
-                      const sorted = [...rankings].sort((a, b) => b.workDays - a.workDays);
-                      return sorted.map((item, index) => renderRankItem(item, index, 'workDays', 'ngày'));
-                    })()}
-                  </div>
-                )}
-              </div>
+              {isLoadingRankings ? (
+                <BotLoader text="Đang tải bảng xếp hạng..." />
+              ) : rankings.length === 0 ? (
+                <div className="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
+                  Chưa có dữ liệu tháng được chọn
+                </div>
+              ) : (
+                (() => {
+                  // Tab Số mẫu: xếp theo năng suất = số mẫu / ngày làm (giảm dần),
+                  // hòa năng suất thì ai nhiều mẫu hơn đứng trên.
+                  // Tab Ngày làm: giữ nguyên xếp theo ngày làm giảm dần.
+                  const sorted = rankingTab === 'samples'
+                    ? [...rankings].sort((a, b) => productivity(b) - productivity(a) || b.samples - a.samples)
+                    : [...rankings].sort((a, b) => b.workDays - a.workDays);
+                  const top3 = sorted.slice(0, 3);
+                  const rest = sorted.slice(3);
+                  return (
+                    <>
+                      {top3.length > 0 && (
+                        <div className="flex gap-1.5 sm:gap-2 items-end">
+                          {top3[1] && <PodiumCard key={top3[1].msnv} item={top3[1]} rank={1} mode={rankingTab} diff={getWorkDayDiff(top3[1])} onSelect={openHistory} highlight={top3[1].msnv === loggedMsnv} />}
+                          {top3[0] && <PodiumCard key={top3[0].msnv} item={top3[0]} rank={0} mode={rankingTab} diff={getWorkDayDiff(top3[0])} onSelect={openHistory} highlight={top3[0].msnv === loggedMsnv} />}
+                          {top3[2] && <PodiumCard key={top3[2].msnv} item={top3[2]} rank={2} mode={rankingTab} diff={getWorkDayDiff(top3[2])} onSelect={openHistory} highlight={top3[2].msnv === loggedMsnv} />}
+                        </div>
+                      )}
+                      <div id="guide-rows" className="space-y-2.5">
+                        {rest.map((item, i) => (
+                          <RankRow key={item.msnv} item={item} index={i + 3} mode={rankingTab} diff={getWorkDayDiff(item)} onSelect={openHistory} highlight={item.msnv === loggedMsnv} />
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()
+              )}
             </div>
           </div>
 
@@ -2188,6 +3043,30 @@ export default function App() {
           }}
         />
       </main>
+
+      {/* Bảng đăng nhập lúc vào web */}
+      <LoginModal
+        open={showLogin}
+        initialMsnv={loggedMsnv ?? ''}
+        onClose={() => setShowLogin(false)}
+        onLogin={handleLogin}
+      />
+
+      {/* Bot hướng dẫn (ẩn khi bảng đăng nhập đang mở) */}
+      {!showLogin && <GuideBot />}
+
+      {/* Bottom sheet: lịch sử số mẫu 1 nhân viên (bấm vào tên trên bảng xếp hạng) */}
+      <AnimatePresence>
+        {historyItem && (
+          <HistorySheet
+            item={historyItem}
+            data={historyData}
+            loading={isLoadingHistory}
+            mode={rankingTab}
+            onClose={closeHistory}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Off-screen Export Containers */}
       <div 
