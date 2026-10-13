@@ -1157,7 +1157,7 @@ export default function App() {
   const [rankingMonth, setRankingMonth] = useState(previousMonth);
   const [rankingTab, setRankingTab] = useState<'samples' | 'workDays'>('samples');
   // Đăng nhập MSNV lúc vào web: hiện bảng chào 1 lần mỗi lần tải trang
-  const [showLogin, setShowLogin] = useState(false); // TEST 7PLUS: tắt modal đăng nhập;
+  const [showLogin, setShowLogin] = useState(true);
   const [loggedMsnv, setLoggedMsnv] = useState<string | null>(() => {
     try {
       return localStorage.getItem('bcipc_logged_msnv');
@@ -2454,7 +2454,7 @@ export default function App() {
           <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
             {/* Current Month Panel */}
             <div
-              className={glassCard("bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg")}
+              className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
             >
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
@@ -2510,7 +2510,7 @@ export default function App() {
 
             {/* Previous Month Panel - Read Only */}
             <div
-              className={glassCard("bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg")}
+              className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
