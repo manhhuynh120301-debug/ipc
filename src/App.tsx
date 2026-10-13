@@ -874,6 +874,42 @@ const HistorySheet = ({
   );
 };
 
+// DEBUG tạm: hiện thông tin chẩn đoán trên màn hình
+function DebugPanel({ prevStats }: { prevStats: any }) {
+  const [errors, setErrors] = React.useState<string[]>([]);
+  const [op, setOp] = React.useState('?');
+  React.useEffect(() => {
+    const h = (e: any) => setErrors(p => [...p, String(e.message || e)].slice(-3));
+    window.addEventListener('error', h);
+    const t = setInterval(() => {
+      const cards = document.querySelectorAll('h3');
+      let info = '';
+      cards.forEach((h3) => {
+        if (h3.textContent === 'DL TRƯỚC') {
+          const card = h3.closest('div[class*="rounded-3xl"]');
+          if (card) {
+            const cs = getComputedStyle(card as Element);
+            info = 'op=' + cs.opacity + ' disp=' + cs.display + ' vis=' + cs.visibility;
+          }
+        }
+      });
+      if (info) setOp(info);
+    }, 1500);
+    return () => { window.removeEventListener('error', h); clearInterval(t); };
+  }, []);
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isOld = /iP(hone|ad).*OS (1[0-5])_/.test(ua);
+  const hc = typeof document !== 'undefined' ? document.documentElement.className : '';
+  return (
+    <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:9999,background:'#111',color:'#0f0',fontSize:'10px',padding:'8px',fontFamily:'monospace',lineHeight:'1.6',wordBreak:'break-all'}}>
+      <div>OLDIOS:{isOld?'YES':'NO'} html:[{hc}]</div>
+      <div>prevStats:{JSON.stringify(prevStats)}</div>
+      <div>card:{op}</div>
+      <div>err:{errors.join(';')||'none'}</div>
+    </div>
+  );
+}
+
 export default function App() {
   const [employeeId, setEmployeeId] = useState('');
   const [employeeName, setEmployeeName] = useState('');
@@ -1993,6 +2029,7 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] bg-[#f8fafc] dark:bg-slate-950 font-sans transition-colors duration-300">
+      <DebugPanel prevStats={prevStats} />
       {/* Toast Notification Container */}
       <AnimatePresence>
         {notification && (
