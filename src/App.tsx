@@ -613,6 +613,7 @@ const BOT_HI_IMG = "/bot-hi.gif";;
 const BotLoader = ({ text = 'Đang tổng hợp dữ liệu...' }: { text?: string }) => (
   <div className="py-8 flex flex-col items-center justify-center gap-3">
     <style>{`
+      input[readonly]{opacity:1!important;-webkit-text-fill-color:currentColor;}
       @keyframes dot-typing { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
       .dot-typing span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #6366f1; margin: 0 2px; animation: dot-typing 1.2s ease-in-out infinite; }
       .dot-typing span:nth-child(2) { animation-delay: .15s; }
@@ -2519,7 +2520,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.samples ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -2529,7 +2529,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.workDays ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -2542,7 +2541,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.lateDays ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
@@ -2552,7 +2550,6 @@ export default function App() {
                     <input 
                       type="number" 
                       readOnly
-                      disabled
                       value={prevStats?.forgotDays ?? 0}
                       className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none"
                     />
