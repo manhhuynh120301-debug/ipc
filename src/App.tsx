@@ -890,6 +890,15 @@ function DebugPanel({ prevStats }: { prevStats: any }) {
           if (card) {
             const cs = getComputedStyle(card as Element);
             info = 'op=' + cs.opacity + ' disp=' + cs.display + ' vis=' + cs.visibility;
+            info += ' cardbg=' + cs.backgroundColor;
+            // tìm số liệu đầu tiên trong card
+            const numEl = card.querySelector('div.select-none, input');
+            if (numEl) {
+              const ns = getComputedStyle(numEl);
+              info += ' numtxt=' + ns.color + ' numbg=' + ns.backgroundColor;
+            }
+            // màu chữ của h3
+            info += ' h3=' + getComputedStyle(h3).color;
           }
         }
       });
