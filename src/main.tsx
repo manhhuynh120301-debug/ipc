@@ -29,28 +29,80 @@ function hideUpdateOverlay() {
   document.getElementById('pwa-update-overlay')?.remove();
 }
 
+let appRendered = false;
+function renderApp() {
+  if (appRendered) return;
+  appRendered = true;
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
+
+// Kiểm tra có bản mới đang chờ KHÔNG trước khi render
+// -> có thì hiện overlay ngay, khỏi chớp bản cũ
+async function detectPendingUpdate(): Promise<boolean> {
+  try {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return false;
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) return false;
+    if (reg.installing || reg.waiting) return true;
+    await Promise.race([
+      reg.update().catch(() => undefined),
+      new Promise((res) => setTimeout(res, 2000)),
+    ]);
+    return !!(reg.installing || reg.waiting);
+  } catch {
+    return false;
+  }
+}
+
 registerSW({
   immediate: true,
   onRegistered(reg) {
     if (!reg) return;
+
     const onUpdateFound = () => {
       // Chỉ hiện khi đã có SW cũ đang chạy (đang cập nhật thật, không phải cài lần đầu)
       if (!navigator.serviceWorker.controller) return;
       showUpdateOverlay();
       const nw = reg.installing;
       nw?.addEventListener('statechange', () => {
-        // Tải lỗi / bị hủy -> ẩn overlay để dùng tiếp bản cũ
-        if (nw.state === 'redundant') hideUpdateOverlay();
+        // Tải lỗi / bị hủy -> ẩn overlay, render bản cũ cho dùng tiếp
+        if (nw.state === 'redundant') {
+          hideUpdateOverlay();
+          renderApp();
+        }
       });
     };
+
     // Phòng trường hợp update đã bắt đầu trước khi listener kịp gắn
     if (reg.installing) onUpdateFound();
     reg.addEventListener('updatefound', onUpdateFound);
   },
 });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// SW mới kích hoạt -> tự tải lại sang bản mới
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
+
+// Khởi động: kiểm tra cập nhật trước, có thì hiện overlay ngay
+(async () => {
+  const updating = await detectPendingUpdate();
+  if (updating) {
+    showUpdateOverlay();
+    // An toàn: quá 60s chưa xong thì bỏ overlay, render bản cũ
+    setTimeout(() => {
+      if (!appRendered) {
+        hideUpdateOverlay();
+        renderApp();
+      }
+    }, 60000);
+    return;
+  }
+  renderApp();
+})();
