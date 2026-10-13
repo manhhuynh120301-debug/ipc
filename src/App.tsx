@@ -2453,8 +2453,7 @@ export default function App() {
           {/* Input Panel Section - Data Detail */}
           <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
             {/* Current Month Panel */}
-            <motion.div 
-              animate={{ opacity: 1, x: 0 }}
+            <div
               className={glassCard("bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg")}
             >
               <div className="flex items-center gap-2 mb-3">
@@ -2507,11 +2506,10 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Previous Month Panel - Read Only */}
-            <motion.div 
-              animate={{ opacity: 1, x: 0 }}
+            <div
               className={glassCard("bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg")}
             >
               <div className="flex items-center justify-between mb-3">
@@ -2546,7 +2544,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Primary Action Button */}
