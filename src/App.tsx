@@ -1157,7 +1157,7 @@ export default function App() {
   const [rankingMonth, setRankingMonth] = useState(previousMonth);
   const [rankingTab, setRankingTab] = useState<'samples' | 'workDays'>('samples');
   // Đăng nhập MSNV lúc vào web: hiện bảng chào 1 lần mỗi lần tải trang
-  const [showLogin, setShowLogin] = useState(true);
+  const [showLogin, setShowLogin] = useState(false); // TEST 7PLUS: tắt modal đăng nhập;
   const [loggedMsnv, setLoggedMsnv] = useState<string | null>(() => {
     try {
       return localStorage.getItem('bcipc_logged_msnv');
