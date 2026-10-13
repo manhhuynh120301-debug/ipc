@@ -46,6 +46,11 @@ import topBanner2 from './assets/images/banner-top2.png';
 import topBanner3 from './assets/images/banner-top3.png';
 // @ts-ignore
 import bottomBanner from './assets/banner-bottom.webp';
+// iOS 15 trở xuống: WebKit cũ render backdrop-filter lỗi -> tắt hiệu ứng kính mờ
+if (typeof navigator !== 'undefined' && /iP(hone|ad).*OS (1[0-5])_/.test(navigator.userAgent)) {
+  document.documentElement.classList.add('old-ios');
+}
+
 
 /** Utility for tailwind classes */
 function cn(...inputs: ClassValue[]) {
@@ -614,6 +619,8 @@ const BotLoader = ({ text = 'Đang tổng hợp dữ liệu...' }: { text?: stri
   <div className="py-8 flex flex-col items-center justify-center gap-3">
     <style>{`
       input[readonly]{opacity:1!important;-webkit-text-fill-color:currentColor;}
+      .old-ios .backdrop-blur-md,.old-ios .backdrop-blur-xl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
+      .old-ios .bg-white\/40,.old-ios .bg-white\/50,.old-ios .bg-white\/80,.old-ios .bg-white\/90,.old-ios .bg-white\/95,.old-ios .bg-white\/98{background-color:#fff!important;}
       @keyframes dot-typing { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
       .dot-typing span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #6366f1; margin: 0 2px; animation: dot-typing 1.2s ease-in-out infinite; }
       .dot-typing span:nth-child(2) { animation-delay: .15s; }
@@ -2517,42 +2524,22 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-0.5">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight ml-1">Số mẫu</label>
-                    <input 
-                      type="number" 
-                      readOnly
-                      value={prevStats?.samples ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
-                    />
+                    <div className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 select-none outline-none">{prevStats?.samples ?? 0}</div>
                   </div>
                   <div className="space-y-0.5">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight ml-1">Ngày làm</label>
-                    <input 
-                      type="number" 
-                      readOnly
-                      value={prevStats?.workDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
-                    />
+                    <div className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 select-none outline-none">{prevStats?.workDays ?? 0}</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-0.5">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight ml-1">Đi trễ</label>
-                    <input 
-                      type="number" 
-                      readOnly
-                      value={prevStats?.lateDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
-                    />
+                    <div className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 select-none outline-none">{prevStats?.lateDays ?? 0}</div>
                   </div>
                   <div className="space-y-0.5">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight ml-1">Quên CC</label>
-                    <input 
-                      type="number" 
-                      readOnly
-                      value={prevStats?.forgotDays ?? 0}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 cursor-not-allowed outline-none"
-                    />
+                    <div className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-[16px] md:text-xs font-bold text-slate-600 dark:text-slate-500 select-none outline-none">{prevStats?.forgotDays ?? 0}</div>
                   </div>
                 </div>
               </div>
