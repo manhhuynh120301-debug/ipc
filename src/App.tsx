@@ -46,27 +46,13 @@ import topBanner2 from './assets/images/banner-top2.png';
 import topBanner3 from './assets/images/banner-top3.png';
 // @ts-ignore
 import bottomBanner from './assets/banner-bottom.webp';
-// iOS 15 trở xuống: WebKit cũ render backdrop-filter lỗi -> tắt hiệu ứng kính mờ bằng inline style
-if (typeof navigator !== 'undefined' && /iP(hone|ad).*OS (1[0-5])_/.test(navigator.userAgent)) {
+// iOS 15 trở xuống: WebKit cũ render backdrop-filter lỗi
+const isOldIOSDevice = typeof navigator !== 'undefined' && /iP(hone|ad).*OS (1[0-5])_/.test(navigator.userAgent);
+// Helper: iOS cũ dùng màu đặc, không kính mờ
+const glassCard = (base: string) => isOldIOSDevice ? base.replace(/bg-white\/\d+/g, 'bg-white').replace(/backdrop-blur-\w+/g, '') : base;
+if (isOldIOSDevice) {
   document.documentElement.classList.add('old-ios');
-  const fixOldIOS = () => {
-    document.querySelectorAll('[class*="backdrop-blur"]').forEach((el) => {
-      (el as HTMLElement).style.setProperty('backdrop-filter', 'none', 'important');
-      (el as HTMLElement).style.setProperty('-webkit-backdrop-filter', 'none', 'important');
-    });
-    document.querySelectorAll('[class*="bg-white/"]').forEach((el) => {
-      (el as HTMLElement).style.setProperty('background-color', '#ffffff', 'important');
-    });
-  };
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(fixOldIOS, 100));
-  } else {
-    setTimeout(fixOldIOS, 100);
-  }
-  // chạy lại sau mỗi 2s để bắt các phần tử render muộn (modal, v.v.)
-  setInterval(fixOldIOS, 2000);
 }
-
 
 /** Utility for tailwind classes */
 function cn(...inputs: ClassValue[]) {
@@ -2469,7 +2455,7 @@ export default function App() {
             {/* Current Month Panel */}
             <motion.div 
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
+              className={glassCard("bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
@@ -2526,7 +2512,7 @@ export default function App() {
             {/* Previous Month Panel - Read Only */}
             <motion.div 
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
+              className={glassCard("bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg")}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
