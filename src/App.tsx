@@ -497,7 +497,6 @@ const PodiumCard = ({
   const s = PODIUM_STYLES[rank];
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: rank === 0 ? 0 : rank === 1 ? 0.05 : 0.1 }}
       whileHover={{ y: -6, scale: 1.03 }}
@@ -567,7 +566,6 @@ const RankRow = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.05 }}
       whileHover={{ x: 5 }}
@@ -800,7 +798,6 @@ const HistorySheet = ({
   ];
   return (
     <motion.div
-      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[80] bg-slate-900/55 flex items-end sm:items-center justify-center sm:p-4"
@@ -1992,7 +1989,6 @@ export default function App() {
       <AnimatePresence>
         {notification && (
           <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             className={cn(
@@ -2154,7 +2150,6 @@ export default function App() {
 
             <motion.div
               id="notif-panel"
-              initial={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: isMobile ? -20 : -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
@@ -2254,7 +2249,6 @@ export default function App() {
           <AnimatePresence>
             {showPwaPrompt && pwaPlatform && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 className="max-w-6xl mx-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/10 dark:shadow-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300"
@@ -2311,7 +2305,6 @@ export default function App() {
           </AnimatePresence>
 
           <motion.section 
-            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-6xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none"
           >
@@ -2351,7 +2344,6 @@ export default function App() {
             <AnimatePresence>
               {showInstructions && !googleSheetsConnected && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden mb-6"
@@ -2451,7 +2443,6 @@ export default function App() {
           <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
             {/* Current Month Panel */}
             <motion.div 
-              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
             >
@@ -2509,7 +2500,6 @@ export default function App() {
 
             {/* Previous Month Panel - Read Only */}
             <motion.div 
-              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg"
             >
