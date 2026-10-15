@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Quản trị sản phẩm — Tiệm In Flop</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <h1>📦 Quản trị sản phẩm</h1>
+      <button type="button" id="btn-logout" class="btn btn-ghost hidden">Đăng xuất</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <!-- Cảnh báo khi chưa cấu hình Supabase -->
+    <div id="cfg-warning" class="cfg-warning hidden">
+      ⚠️ Chưa điền <code>SUPABASE_URL</code> / <code>SUPABASE_ANON_KEY</code> trong file
+      <code>config.js</code>. Hãy làm theo hướng dẫn trong README rồi tải lại trang.
+    </div>
+
+    <!-- Đăng nhập -->
+    <section id="login-box" class="card hidden">
+      <h2>Đăng nhập</h2>
+      <p class="muted">Dùng tài khoản đã tạo trong Supabase → Authentication → Users.</p>
+      <label class="field">
+        <span>Email</span>
+        <input type="email" id="login-email" autocomplete="username" placeholder="ban@example.com" />
+      </label>
+      <label class="field">
+        <span>Mật khẩu</span>
+        <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" />
+      </label>
+      <p id="login-error" class="error hidden"></p>
+      <button type="button" id="btn-login" class="btn btn-primary btn-block">Đăng nhập</button>
+    </section>
+
+    <!-- Tabs chức năng -->
+    <nav id="tab-bar" class="tab-bar hidden">
+      <button type="button" class="tab-btn active" data-tab="products">📦 Sản phẩm</button>
+      <button type="button" class="tab-btn" data-tab="gallery">🖼️ Ảnh thật</button>
+      <button type="button" class="tab-btn" data-tab="settings">⚙️ Cài đặt</button>
+    </nav>
+
+    <!-- TAB: Danh sách sản phẩm -->
+    <section id="tab-products" class="tab-pane hidden">
+      <div class="toolbar">
+        <button type="button" id="btn-add" class="btn btn-primary">＋ Thêm sản phẩm</button>
+        <button type="button" id="btn-reload" class="btn btn-ghost">↻ Tải lại</button>
+      </div>
+      <div id="product-list" class="product-list"></div>
+    </section>
+
+    <!-- TAB: Ảnh thật sản phẩm đã in -->
+    <section id="tab-gallery" class="tab-pane hidden">
+      <div class="card">
+        <h2>Ảnh thật sản phẩm đã in</h2>
+        <p class="muted">Ảnh hiện ở khu vuốt thẻ trên trang chủ. Kéo ảnh lên đầu danh sách = hiện đầu tiên.</p>
+        <label class="btn btn-primary upload-label">
+          📤 Thêm ảnh từ điện thoại
+          <input type="file" id="g-images" accept="image/*,.heic,.heif" multiple class="hidden-file" />
+        </label>
+        <p id="g-upload-status" class="muted"></p>
+        <div id="gallery-list" class="gallery-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB: Cài đặt chung -->
+    <section id="tab-settings" class="tab-pane hidden">
+      <div class="card">
+        <h2>Cài đặt chung</h2>
+        <p class="muted">Mọi chữ hiển thị trên web — sửa xong bấm Lưu là web cập nhật ngay.</p>
+        <label class="field"><span>Tên shop</span><input type="text" id="s-shop_name" /></label>
+        <label class="field"><span>Số điện thoại Zalo nhận đơn</span><input type="text" id="s-zalo_number" inputmode="tel" /></label>
+        <label class="field"><span>Mẫu tin nhắn Zalo</span><input type="text" id="s-zalo_message_template" /></label>
+        <label class="field"><span>Nhãn badge hero (VD: Có gì mới)</span><input type="text" id="s-hero_badge_tag" /></label>
+        <label class="field"><span>Câu chạy ở badge hero (mỗi dòng một câu — web tự chạy lần lượt)</span><textarea id="s-hero_badge_text" rows="3"></textarea></label>
+        <label class="field"><span>Tiêu đề lớn hero</span><input type="text" id="s-hero_headline" /></label>
+        <label class="field"><span>Dòng phụ hero</span><input type="text" id="s-hero_subheadline" /></label>
+        <label class="field"><span>Tiêu đề banner tư vấn</span><input type="text" id="s-promo_title" /></label>
+        <label class="field"><span>Nội dung banner tư vấn</span><textarea id="s-promo_desc" rows="2"></textarea></label>
+        <label class="field"><span>Chữ nút banner tư vấn</span><input type="text" id="s-promo_button" /></label>
+        <label class="field"><span>Tiêu đề card kính hero (VD: Móc khóa & decor in 3D xinh)</span><input type="text" id="s-hero_card_title" /></label>
+        <label class="field"><span>Chữ pill freeship ở card hero (VD: Freeship đơn từ 150k)</span><input type="text" id="s-freeship_text" /></label>
+        <p id="settings-error" class="error hidden"></p>
+        <button type="button" id="btn-save-settings" class="btn btn-primary btn-block">💾 Lưu cài đặt</button>
+      </div>
+    </section>
+
+    <!-- Form thêm / sửa -->
+    <section id="editor-box" class="card hidden">
+      <h2 id="editor-title">Thêm sản phẩm</h2>
+
+      <label class="field">
+        <span>Tên sản phẩm *</span>
+        <input type="text" id="f-name" placeholder="VD: Móc Khóa Nón Lá Mini In 3D" />
+      </label>
+      <label class="field">
+        <span>Mã sản phẩm (tự tạo từ tên, không dấu)</span>
+        <input type="text" id="f-slug" placeholder="vd: moc-khoa-non-la-mini" />
+      </label>
+      <label class="field">
+        <span>Danh mục *</span>
+        <input type="text" id="f-category" list="category-list" placeholder="VD: Móc khóa & Phụ kiện" />
+        <datalist id="category-list"></datalist>
+      </label>
+      <label class="field">
+        <span>Mô tả chi tiết</span>
+        <textarea id="f-desc" rows="4" placeholder="Chất liệu, kích thước, công dụng..."></textarea>
+      </label>
+      <div class="row2 stack-mobile">
+        <label class="field">
+          <span>Thứ tự hiện (số nhỏ lên trước)</span>
+          <input type="number" id="f-order" value="0" min="0" />
+        </label>
+        <label class="check">
+          <input type="checkbox" id="f-isnew" />
+          <span>Gắn nhãn "Mới"</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="f-featured" />
+          <span>📌 Ghim nổi bật (lên đầu danh sách)</span>
+        </label>
+      </div>
+
+      <h3>🏷️ Phân loại hàng & giá <span class="opt-badge">không bắt buộc</span></h3>
+      <p class="muted">Chưa cần thêm phân loại cũng lưu được — nhập giá bán thường bên dưới. Có phân loại (màu sắc, loại đèn...) thì web tự sinh bảng giá từng loại.</p>
+      <div id="simple-price-wrap">
+        <div class="row2">
+          <label class="field">
+            <span>Giá bán (đ) *</span>
+            <input type="number" id="f-simple-price" placeholder="VD: 47500" min="0" step="1000" />
+          </label>
+          <label class="field">
+            <span>Tồn kho</span>
+            <input type="number" id="f-simple-stock" placeholder="VD: 20" min="0" />
+          </label>
+        </div>
+      </div>
+      <div id="variant-groups"></div>
+      <button type="button" id="btn-add-vgroup" class="btn btn-ghost">＋ Thêm phân loại hàng</button>
+
+      <div id="sku-section">
+        <h3>Giá & tồn kho</h3>
+        <div class="bulk-box">
+          <div class="bulk-title">Đặt chung cho tất cả phân loại</div>
+          <div class="bulk-row">
+            <input type="number" id="bulk-price" placeholder="Giá (đ)" min="0" step="1000" />
+            <input type="number" id="bulk-stock" placeholder="Tồn kho" min="0" />
+            <button type="button" id="btn-bulk-apply">Áp dụng</button>
+          </div>
+        </div>
+        <div id="sku-rows"></div>
+      </div>
+
+      <h3>✨ Tag tùy chỉnh <span class="opt-badge">không bắt buộc</span></h3>
+      <p class="muted">Giống tag "Nổi bật" nhưng tự đặt tên + màu chữ + màu nền, giữ hiệu ứng nhấp nháy. Bỏ trống tên = không hiện.</p>
+      <label class="field">
+        <span>Tên tag</span>
+        <input type="text" id="f-tag-text" placeholder='VD: Bán chạy 🔥, Giảm 20%' maxlength="24" />
+      </label>
+      <div class="seg-row">
+        <button type="button" class="seg active" id="seg-tag-solid">🎨 Đơn sắc</button>
+        <button type="button" class="seg" id="seg-tag-grad">🌈 Gradient</button>
+      </div>
+      <div class="color-row">
+        <label class="color-field"><input type="color" id="f-tag-fg" value="#FFFFFF" /><span>Màu chữ</span></label>
+        <label class="color-field"><input type="color" id="f-tag-bg" value="#EC4899" /><span>Màu nền</span></label>
+        <label class="color-field hidden" id="f-tag-bg2-wrap"><input type="color" id="f-tag-bg2" value="#F59E0B" /><span>Màu nền 2</span></label>
+      </div>
+      <div class="tag-preview-wrap">
+        <div class="tag-preview-label">Xem trước (nhấp nháy như thật)</div>
+        <span class="demo-tag" id="tag-preview">Tag mẫu</span>
+      </div>
+
+      <h3>🖼️ Ảnh sản phẩm</h3>
+      <p class="muted">Ảnh đầu tiên = ảnh đại diện. Bấm vào ảnh để chọn ảnh đại diện.</p>
+      <div id="image-previews" class="image-previews"></div>
+      <label class="btn btn-ghost upload-label">
+        📤 Chọn ảnh từ điện thoại
+        <input type="file" id="f-images" accept="image/*,.heic,.heif" multiple class="hidden-file" />
+      </label>
+      <p id="upload-status" class="muted"></p>
+
+      <p id="editor-error" class="error hidden"></p>
+      <div class="editor-actions">
+        <button type="button" id="btn-save" class="btn btn-primary">💾 Lưu sản phẩm</button>
+        <button type="button" id="btn-cancel" class="btn btn-ghost">Hủy</button>
+        <button type="button" id="btn-delete" class="btn btn-danger hidden">🗑 Xóa</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="config.js"></script>
+  <!-- Supabase client (file nội bộ, không cần mạng CDN): chỉ dùng khi đã điền SUPABASE_URL + SUPABASE_ANON_KEY trong config.js -->
+    <script src="vendor-supabase.js"></script>
+  <!-- heic2any: tự convert HEIC sang JPG ngay trên trình duyệt khi upload -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
