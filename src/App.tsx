@@ -852,10 +852,14 @@ const HistorySheet = ({
               {trend !== null && prev && (
                 <span className={cn(
                   "inline-flex items-center gap-1 text-[10.5px] font-bold px-2.5 py-[3px] rounded-full border",
-                  trend >= 0 ? "text-emerald-600 bg-emerald-50 border-emerald-200" : "text-red-600 bg-red-50 border-red-200"
+                  trend > 0
+                    ? "text-emerald-600 bg-emerald-50 border-emerald-200"
+                    : trend < 0
+                      ? "text-red-600 bg-red-50 border-red-200"
+                      : "text-violet-600 bg-violet-50 border-violet-200"
                 )}>
-                  {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {Math.abs(trend)}% so với {prev.shortLabel}
+                  {trend > 0 ? <TrendingUp className="w-3 h-3" /> : trend < 0 ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" strokeWidth={3} />}
+                  {trend === 0 ? `Không đổi so với ${prev.shortLabel}` : `${trend > 0 ? 'Tăng' : 'Giảm'} ${Math.abs(trend)}% so với ${prev.shortLabel}`}
                 </span>
               )}
             </div>
