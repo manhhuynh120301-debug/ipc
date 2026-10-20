@@ -543,7 +543,6 @@ const PodiumCard = ({
           numColor={s.numColor}
           className="bg-white border-slate-200 shadow-sm text-slate-700 transition-transform duration-300 group-hover:scale-105"
         />
-        {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
       </div>
     </motion.div>
   );
@@ -591,7 +590,6 @@ const RankRow = ({
           mode={mode}
           className="bg-slate-100 text-slate-600 border-slate-200/50 transition-all duration-300 group-hover:scale-105 group-hover:bg-white"
         />
-        {mode === 'workDays' && diff !== null && <DiffChip diff={diff} />}
       </div>
     </motion.div>
   );
@@ -849,15 +847,6 @@ const HistorySheet = ({
             </div>
             <div className="flex items-center justify-between mt-3.5 mb-1.5 px-0.5">
               <span className="text-xs font-extrabold text-slate-700">{mode === 'samples' ? 'Số mẫu theo tháng' : 'Ngày làm theo tháng'}</span>
-              {trend !== null && prev && (
-                <span className={cn(
-                  "inline-flex items-center gap-1 text-[10.5px] font-bold px-2.5 py-[3px] rounded-full border",
-                  trend >= 0 ? "text-emerald-600 bg-emerald-50 border-emerald-200" : "text-red-600 bg-red-50 border-red-200"
-                )}>
-                  {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {trend >= 0 ? `+${trend}%` : `${trend}%`} so với {prev.shortLabel}
-                </span>
-              )}
             </div>
             <div className="bg-slate-50 border border-slate-100 rounded-[18px] px-2 pt-3 pb-1.5">
               <HistoryChart data={data} mode={mode} />
