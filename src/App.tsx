@@ -1245,6 +1245,9 @@ export default function App() {
     return getMonthInputValue(date);
   }, [currentTime]);
 
+  // Bảng thống kê: từ ngày 23 mặc định hiện tháng hiện tại, trước đó hiện tháng trước.
+  const defaultRankingMonth = currentTime.getDate() >= 23 ? currentMonth : previousMonth;
+
   const [reportingMonth, setReportingMonth] = useState(currentMonth);
   const [comparisonMonth, setComparisonMonth] = useState(previousMonth);
 
@@ -1428,7 +1431,7 @@ export default function App() {
     return val ? parseInt(val) : 0;
   });
 
-  const [rankingMonth, setRankingMonth] = useState(previousMonth);
+  const [rankingMonth, setRankingMonth] = useState(defaultRankingMonth);
   const [rankingTab, setRankingTab] = useState<'samples' | 'workDays'>('samples');
   // Đăng nhập MSNV lúc vào web: hiện bảng chào 1 lần mỗi lần tải trang
   const [showLogin, setShowLogin] = useState(true);
